@@ -540,29 +540,31 @@
     <script>
 
         function getServerURL() {
-          // Production: Railway atau domain HTTPS lainnya
-          // Di production, chat juga menggunakan server yang sama (port sama)
+          // Production: Railway atau domain lain dengan HTTPS
+          // Di production, semua service berjalan di port yang sama (Railway/Heroku style)
           if (window.location.protocol === 'https:') {
             return window.location.origin;
           }
-
-          // Development: Local atau IP WiFi
+          
           const WIFI_IPS = ['192.168.18.30', '192.168.18.31'];
-          const PORT = 3003; // Gunakan port yang sama dengan server utama
+          const PORT = 3003; // Di production semua via port yang sama, di local bisa pakai 3003
 
+          // Localhost development
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return `http://localhost:${PORT}`;
           }
 
+          // IP Address development (LAN)
           if (window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
             return `http://${window.location.hostname}:${PORT}`;
           }
 
+          // Fallback untuk local WiFi
           return `http://${WIFI_IPS[0]}:${PORT}`;
         }
 
         const SERVER_URL = getServerURL();
-        console.log(' Server URL:', SERVER_URL);
+        console.log('🌐 Server URL:', SERVER_URL);
         
         const socket = io(SERVER_URL);
 

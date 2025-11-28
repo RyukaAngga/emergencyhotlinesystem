@@ -44,13 +44,18 @@ const io = socketIo(server, {
     }
 });
 
-const PORT = process.env.PORT || 3333;
+const PORT = process.env.PORT || 3003;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-sonnet-4.5';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+// Log environment info
+console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
+console.log('🚂 Railway Domain:', process.env.RAILWAY_PUBLIC_DOMAIN || 'N/A');
 
 // ========================================
 // MIDDLEWARE
@@ -174,6 +179,8 @@ app.get('/health', (req, res) => {
         status: 'OK',
         server: 'Emergency Hotline Integrated Server',
         version: '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        railwayDomain: process.env.RAILWAY_PUBLIC_DOMAIN || null,
         timestamp: new Date().toISOString(),
         stats: {
             connectedUsers: connectedUsers.size,

@@ -644,29 +644,31 @@
   <script>
 
     function getServerURL() {
-      // Production: Railway atau domain HTTPS lainnya
+      // Production: Railway atau domain lain dengan HTTPS
+      // Jika halaman diakses via HTTPS, gunakan origin yang sama (relative URL)
       if (window.location.protocol === 'https:') {
-        // Di production, gunakan origin yang sama (relative URL)
         return window.location.origin;
       }
-
-      // Development: Local atau IP WiFi
+      
       const WIFI_IPS = ['192.168.18.30', '192.168.18.31'];
       const PORT = 3003;
 
+      // Localhost development
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return `http://localhost:${PORT}`;
       }
 
+      // IP Address development (LAN)
       if (window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
         return `http://${window.location.hostname}:${PORT}`;
       }
 
+      // Fallback untuk local WiFi
       return `http://${WIFI_IPS[0]}:${PORT}`;
     }
 
     const SERVER_URL = getServerURL();
-    console.log(' Server URL:', SERVER_URL);
+    console.log('🌐 Server URL:', SERVER_URL);
 
     const supabaseUrl = 'https://fvayuhanwcwinkvvvisk.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2YXl1aGFud2N3aW5rdnZ2aXNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MDk1NTYsImV4cCI6MjA3NTQ4NTU1Nn0.AP0ZYsrUQ1ACD7fmX1wTM88_zzMtvyKXmgc9wCVvRrM';

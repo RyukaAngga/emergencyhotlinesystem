@@ -3886,31 +3886,33 @@
     <script>
 
         function getServerURL() {
-            // Production: Railway atau domain HTTPS lainnya
+            // Production: Railway atau domain lain dengan HTTPS
+            // Jika halaman diakses via HTTPS, gunakan origin yang sama (relative URL)
             if (window.location.protocol === 'https:') {
-                // Di production, gunakan origin yang sama (relative URL)
                 return window.location.origin;
             }
-
-            // Development: Local atau IP WiFi
+            
             const WIFI_IPS = ['192.168.18.30', '192.168.18.31'];
             const PORT = 3003;
 
+            // Localhost development
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 return `http://localhost:${PORT}`;
             }
 
+            // IP Address development (LAN)
             if (window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
                 return `http://${window.location.hostname}:${PORT}`;
             }
 
+            // Fallback untuk local WiFi
             return `http://${WIFI_IPS[0]}:${PORT}`;
         }
 
         function getWebSocketURL() {
             const serverURL = getServerURL();
-            // Untuk production HTTPS, gunakan wss://
-            if (window.location.protocol === 'https:') {
+            // Untuk HTTPS, gunakan WSS
+            if (serverURL.startsWith('https://')) {
                 return serverURL.replace('https://', 'wss://');
             }
             return serverURL.replace('http://', 'ws://');
@@ -3918,6 +3920,8 @@
 
         const SERVER_URL = getServerURL();
         const WS_URL = getWebSocketURL();
+        console.log('🌐 Server URL:', SERVER_URL);
+        console.log('🔌 WebSocket URL:', WS_URL);
 
         const EMERGENCY_CONTACTS = [
             { name: 'Petugas Utama', phone: '+628814554581' },
