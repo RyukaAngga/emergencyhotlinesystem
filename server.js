@@ -60,6 +60,13 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 // ========================================
+// ROOT ROUTE - Homepage
+// ========================================
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
+// ========================================
 // DATA STORAGE
 // ========================================
 const connectedUsers = new Map();
