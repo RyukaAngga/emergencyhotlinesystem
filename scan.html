@@ -644,7 +644,13 @@
   <script>
 
     function getServerURL() {
+      // Production: Railway atau domain HTTPS lainnya
+      if (window.location.protocol === 'https:') {
+        // Di production, gunakan origin yang sama (relative URL)
+        return window.location.origin;
+      }
 
+      // Development: Local atau IP WiFi
       const WIFI_IPS = ['192.168.18.30', '192.168.18.31'];
       const PORT = 3003;
 

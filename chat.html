@@ -540,9 +540,15 @@
     <script>
 
         function getServerURL() {
+          // Production: Railway atau domain HTTPS lainnya
+          // Di production, chat juga menggunakan server yang sama (port sama)
+          if (window.location.protocol === 'https:') {
+            return window.location.origin;
+          }
 
+          // Development: Local atau IP WiFi
           const WIFI_IPS = ['192.168.18.30', '192.168.18.31'];
-          const PORT = 3004; // Chat server menggunakan port 3004
+          const PORT = 3003; // Gunakan port yang sama dengan server utama
 
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return `http://localhost:${PORT}`;
