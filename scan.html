@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Scan Wajah - EHS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      color: #1a1a1a;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .scan-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    .app-header {
+      width: 100%;
+      background: #3b82f6;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .menu-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      position: absolute;
+      right: 24px;
+    }
+
+    .menu-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 60px;
+      right: 24px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      min-width: 180px;
+      display: none;
+      z-index: 30;
+      overflow: hidden;
+    }
+
+    .dropdown-menu.active {
+      display: block;
+      animation: slideDown 0.2s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .dropdown-item {
+      padding: 12px 16px;
+      color: #1f2937;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-item:hover {
+      background: #f3f4f6;
+    }
+
+    .app-brand-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 20px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .app-logo {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.025em;
+    }
+
+    .video-container {
+      flex: 1;
+      width: 100%;
+      max-width: 100vw;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      border: none;
+      margin: 0;
+      display: block;
+      
+      transform: rotate(0deg);
+      transition: transform 0.3s ease;
+    }
+
+    .scan-instruction {
+      width: 100%;
+      background: #3b82f6;
+      color: #ffffff;
+      text-align: center;
+      padding: 20px 16px;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .scan-status {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      color: #1f2937;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scan-status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3b82f6;
+      display: inline-block;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    .face-box {
+      position: absolute;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 5;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .temp-display {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: #1f2937;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 15;
+      pointer-events: none;
+      display: none;
+      border: 2px solid #3b82f6;
+    }
+
+    .camera-rotate-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: rgba(59, 130, 246, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 25;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      gap: 2px;
+    }
+
+    .camera-rotate-btn i {
+      font-size: 18px;
+    }
+
+    .shortcut-hint-rotate {
+      font-size: 8px;
+      opacity: 0.8;
+      font-weight: 600;
+      margin-top: -2px;
+    }
+
+    .shortcut-hint-menu {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: rgba(59, 130, 246, 0.9);
+      color: white;
+      font-size: 9px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .camera-rotate-btn:hover {
+      background: rgba(59, 130, 246, 1);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .camera-rotate-btn:active {
+      transform: scale(0.95);
+    }
+
+    .camera-rotate-indicator {
+      position: absolute;
+      bottom: 75px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 24;
+      display: none;
+      backdrop-filter: blur(10px);
+    }
+
+    .camera-rotate-indicator.show {
+      display: block;
+    }
+
+    .rotate-hint-bubble {
+      position: absolute;
+      top: 70px;
+      right: 20px;
+      background: rgba(59, 130, 246, 0.95);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      z-index: 15;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: bubblePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes bubblePulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+      }
+    }
+
+    .rotate-hint-bubble i {
+      font-size: 16px;
+    }
+
+    @media screen and (max-width: 768px) {
+      .rotate-hint-bubble {
+        top: 65px;
+        right: 16px;
+        font-size: 12px;
+        padding: 10px 14px;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      .rotate-hint-bubble {
+        top: 60px;
+        right: 12px;
+        font-size: 11px;
+        padding: 8px 12px;
+      }
+    }
+
+    @media screen and (max-width: 768px) {
+      .camera-rotate-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+        bottom: 16px;
+        right: 16px;
+      }
+
+      .camera-rotate-indicator {
+        bottom: 65px;
+        right: 16px;
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      .camera-rotate-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+        bottom: 12px;
+        right: 12px;
+      }
+
+      .camera-rotate-indicator {
+        bottom: 58px;
+        right: 12px;
+        font-size: 10px;
+        padding: 5px 8px;
+      }
+    }
+
+    .face-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #3b82f6;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 6;
+      box-shadow: 0 0 4px rgba(59, 130, 246, 0.6);
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.3);
+        opacity: 0.7;
+      }
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      font-size: 16px;
+      color: #1f2937;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media screen and (max-width: 768px) {
+      .app-logo {
+        height: 44px;
+      }
+
+      .app-title {
+        font-size: 16px;
+      }
+
+      .app-header {
+        padding: 14px 20px;
+      }
+
+      .scan-instruction {
+        font-size: 15px;
+        padding: 18px 16px;
+      }
+
+      .scan-status {
+        font-size: 13px;
+        padding: 8px 16px;
+        top: 16px;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      .app-logo {
+        height: 40px;
+      }
+
+      .app-title {
+        font-size: 15px;
+      }
+
+      .scan-instruction {
+        font-size: 14px;
+        padding: 16px 12px;
+      }
+    }
+
+    @media screen and (orientation: landscape) and (max-height: 500px) {
+      .app-header {
+        padding: 12px 20px;
+      }
+
+      .app-logo {
+        height: 36px;
+      }
+
+      .app-title {
+        font-size: 14px;
+      }
+
+      .scan-instruction {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+    }
+
+    html.kiosk-fullscreen,
+    body.kiosk-fullscreen {
+      width: 100vw !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+    }
+
+    html.kiosk-fullscreen {
+      background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%) !important;
+    }
+
+    .kiosk-fullscreen .scan-main {
+      width: 100vw !important;
+      height: 100vh !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
+    .kiosk-fullscreen::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    .kiosk-fullscreen {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 0 10px 40px rgba(59, 130, 246, 0.4);
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.05);
+        box-shadow: 0 15px 50px rgba(59, 130, 246, 0.6);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scan-main">
+    
+    <div class="app-header">
+      <div class="app-brand-container">
+        <img src="./img/logo.png" alt="EHS Logo" class="app-logo">
+        <div class="app-title">Emergency Hotline System</div>
+      </div>
+
+      <button class="menu-button" onclick="toggleMenu()" id="menuBtn" title="Menu [3]">
+        ⋮
+        <span class="shortcut-hint-menu">[3]</span>
+      </button>
+
+      <div class="dropdown-menu" id="dropdownMenu">
+        <a href="scan-manual.html" class="dropdown-item" id="scanManualLink">
+          <i class="fas fa-camera"></i> Scan Manual <span class="shortcut-hint">[2]</span>
+        </a>
+      </div>
+
+      <div class="shortcut-info-bar" id="shortcutInfoBar" style="display: none;">
+        <div class="shortcut-info-content">
+          <i class="fas fa-keyboard"></i>
+          <span id="shortcutInfoText">Tekan [2] untuk Scan Manual</span>
+          <button class="shortcut-info-close" onclick="hideShortcutInfo()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-container">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+      <div id="faceBox" class="face-box" style="display:none;"></div>
+      <div id="loading" class="loading-overlay" style="display:none;">
+        <div class="loading-spinner"></div>
+        <div>Memuat kamera...</div>
+      </div>
+      <div id="status" class="scan-status" style="display:none;">
+        <span class="dot"></span>
+        <span id="statusText"></span>
+      </div>
+      
+      <button class="camera-rotate-btn" id="cameraRotateBtn" onclick="rotateCamera()" title="Rotate Kamera [4]">
+        <i class="fas fa-sync-alt"></i>
+        <span class="shortcut-hint-rotate">[4]</span>
+      </button>
+      <div class="camera-rotate-indicator" id="cameraRotateIndicator">0°</div>
+      
+      <div class="rotate-hint-bubble">
+        <i class="fas fa-info-circle"></i>
+        <span>Tekan [4] untuk rotate kamera</span>
+      </div>
+    </div>
+
+    <div class="scan-instruction">Arahkan wajah anda ke kamera</div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="face-recognition.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+
+    function getServerURL() {
+
+      const WIFI_IPS = ['192.168.18.30', '192.168.18.31'];
+      const PORT = 3003;
+
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return `http://localhost:${PORT}`;
+      }
+
+      if (window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+        return `http://${window.location.hostname}:${PORT}`;
+      }
+
+      return `http://${WIFI_IPS[0]}:${PORT}`;
+    }
+
+    const SERVER_URL = getServerURL();
+    console.log(' Server URL:', SERVER_URL);
+
+    const supabaseUrl = 'https://fvayuhanwcwinkvvvisk.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2YXl1aGFud2N3aW5rdnZ2aXNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MDk1NTYsImV4cCI6MjA3NTQ4NTU1Nn0.AP0ZYsrUQ1ACD7fmX1wTM88_zzMtvyKXmgc9wCVvRrM';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const faceBox = document.getElementById('faceBox');
+    const loading = document.getElementById('loading');
+    const status = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+
+    let faceDetected = false;
+    let scanning = true;
+    let lastVoiceTime = 0;
+    let voiceEnabled = false;
+    let isSpeaking = false; // Flag untuk menandai apakah suara sedang diucapkan
+    let wasInVoiceRange = false; // Flag untuk menandai apakah wajah sebelumnya dalam range suara
+    const VOICE_COOLDOWN = 3000; // 3 detik cooldown antara suara
+
+    let currentTemperature = null;
+    let temperatures = []; // Array untuk menyimpan readings
+    let tempDisplay = null;
+    let faceDots = [];
+
+    let registeredFaces = []; // Cache untuk registered faces
+    let socket = null; // WebSocket untuk notifikasi admin
+    const FACE_MATCH_THRESHOLD = 0.6; // Threshold untuk matching wajah
+
+    let cameraRotation = 0; // 0, 90, 180, 270 degrees
+    let videoOriginalTransform = ''; // Store original transform
+
+    const SCAN_RATIO_THRESHOLD = 0.35; // 35% dari lebar video = bisa scan (jarak 1 meter - data kalibrasi)
+    const VOICE_MIN_RATIO = 0.17; // 17% dari lebar video = suara mulai aktif (jarak 2 meter - data kalibrasi)
+    const VOICE_MAX_RATIO = 0.50; // 50% dari lebar video = suara masih aktif (jarak lebih dekat dari 1 meter)
+
+    const VOICE_MIN_DISTANCE = 0.1; // Minimum 0.1 meter untuk suara
+    const VOICE_MAX_DISTANCE = 2.0; // Maximum 2 meter untuk suara
+
+    function generateBodyTemperature() {
+
+      const random = Math.random();
+      let temp;
+
+      if (random < 0.95) {
+
+        temp = 36.1 + (Math.random() * 1.1); // 36.1 - 37.2°C
+      } else {
+
+        if (Math.random() < 0.5) {
+          temp = 35.8 + (Math.random() * 0.3); // 35.8 - 36.1°C (sedikit rendah)
+        } else {
+          temp = 37.2 + (Math.random() * 0.3); // 37.2 - 37.5°C (sedikit tinggi)
+        }
+      }
+
+      temp += (Math.random() - 0.5) * 0.1;
+
+      return parseFloat(temp.toFixed(1));
+    }
+
+    function initVoice() {
+      if ('speechSynthesis' in window) {
+
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) {
+          window.speechSynthesis.onvoiceschanged = () => {
+            voices = window.speechSynthesis.getVoices();
+          };
+        }
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    function speakText(text) {
+
+      if (!('speechSynthesis' in window)) {
+        return;
+      }
+
+      if (isSpeaking) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastVoiceTime < VOICE_COOLDOWN) {
+        return;
+      }
+
+      try {
+        const utterance = new SpeechSynthesisUtterance(text);
+
+        const voices = window.speechSynthesis.getVoices();
+        const indonesianVoice = voices.find(v => v.lang.includes('id')) || voices.find(v => v.lang.includes('ID'));
+        if (indonesianVoice) {
+          utterance.voice = indonesianVoice;
+        }
+
+        utterance.lang = 'id-ID'; // Bahasa Indonesia
+        utterance.rate = 0.9; // Sedikit lebih lambat untuk kejelasan
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        utterance.onstart = () => {
+          isSpeaking = true; // Set flag bahwa suara sedang diucapkan
+          lastVoiceTime = Date.now();
+        };
+
+        utterance.onend = () => {
+          isSpeaking = false; // Reset flag
+          lastVoiceTime = Date.now();
+        };
+
+        utterance.onerror = (error) => {
+          isSpeaking = false; // Reset flag meskipun error
+          lastVoiceTime = Date.now();
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        isSpeaking = false; // Reset flag jika error
+      }
+    }
+
+    async function startCamera() {
+      loading.style.display = 'flex';
+      try {
+
+        const isLandscape = window.innerWidth > window.innerHeight;
+        const videoContainer = document.querySelector('.video-container');
+
+        const constraints = {
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+
+        video.onloadedmetadata = () => {
+
+          const videoWidth = video.videoWidth;
+          const videoHeight = video.videoHeight;
+          const isVideoLandscape = videoWidth > videoHeight;
+
+          console.log('Video dimensions:', videoWidth, 'x', videoHeight);
+          console.log('Screen orientation:', isLandscape ? 'landscape' : 'portrait');
+          console.log('Video orientation:', isVideoLandscape ? 'landscape' : 'portrait');
+
+          const FORCE_ROTATE = null; // Set ke null untuk auto-detect, atau set manual jika perlu
+
+          if (FORCE_ROTATE !== null) {
+
+            console.log('Force rotating video:', FORCE_ROTATE, 'degrees');
+            video.style.transform = `translate(-50%, -50%) rotate(${FORCE_ROTATE}deg)`;
+            video.style.width = '100vh';
+            video.style.height = '100vw';
+            video.style.objectFit = 'cover';
+            video.style.position = 'absolute';
+            video.style.top = '50%';
+            video.style.left = '50%';
+          } else {
+
+            if (isLandscape) {
+
+              if (!isVideoLandscape) {
+
+                console.log('Rotating video 90deg clockwise for landscape screen');
+                video.style.transform = 'translate(-50%, -50%) rotate(90deg)';
+                video.style.width = '100vh';
+                video.style.height = '100vw';
+                video.style.objectFit = 'cover';
+                video.style.position = 'absolute';
+                video.style.top = '50%';
+                video.style.left = '50%';
+              } else {
+
+                video.style.transform = 'rotate(0deg)';
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.position = 'relative';
+                video.style.top = 'auto';
+                video.style.left = 'auto';
+              }
+            } else {
+
+              if (isVideoLandscape) {
+
+                console.log('Rotating video -90deg for portrait screen');
+                video.style.transform = 'translate(-50%, -50%) rotate(-90deg)';
+                video.style.width = '100vh';
+                video.style.height = '100vw';
+                video.style.objectFit = 'cover';
+                video.style.position = 'absolute';
+                video.style.top = '50%';
+                video.style.left = '50%';
+              } else {
+
+                video.style.transform = 'rotate(0deg)';
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.position = 'relative';
+                video.style.top = 'auto';
+                video.style.left = 'auto';
+              }
+            }
+          }
+
+          if (isLandscape) {
+            videoContainer.classList.add('landscape');
+            videoContainer.classList.remove('portrait');
+          } else {
+            videoContainer.classList.add('portrait');
+            videoContainer.classList.remove('landscape');
+          }
+
+          video.play();
+          loading.style.display = 'none';
+          status.style.display = 'flex';
+          statusText.textContent = 'Mendeteksi wajah...';
+
+          voiceEnabled = true;
+
+          runFaceDetection();
+        };
+
+        window.addEventListener('orientationchange', () => {
+          setTimeout(() => {
+            const isLandscape = window.innerWidth > window.innerHeight;
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            const isVideoLandscape = videoWidth > videoHeight;
+
+            if (isLandscape) {
+              if (!isVideoLandscape) {
+                video.style.transform = 'translate(-50%, -50%) rotate(90deg)';
+                video.style.width = '100vh';
+                video.style.height = '100vw';
+                video.style.position = 'absolute';
+                video.style.top = '50%';
+                video.style.left = '50%';
+              } else {
+                video.style.transform = 'rotate(0deg)';
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.position = 'relative';
+                video.style.top = 'auto';
+                video.style.left = 'auto';
+              }
+            } else {
+              if (isVideoLandscape) {
+                video.style.transform = 'translate(-50%, -50%) rotate(-90deg)';
+                video.style.width = '100vh';
+                video.style.height = '100vw';
+                video.style.position = 'absolute';
+                video.style.top = '50%';
+                video.style.left = '50%';
+              } else {
+                video.style.transform = 'rotate(0deg)';
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.position = 'relative';
+                video.style.top = 'auto';
+                video.style.left = 'auto';
+              }
+            }
+
+            if (isLandscape) {
+              videoContainer.classList.add('landscape');
+              videoContainer.classList.remove('portrait');
+            } else {
+              videoContainer.classList.add('portrait');
+              videoContainer.classList.remove('landscape');
+            }
+          }, 200);
+        });
+
+      } catch (err) {
+        loading.textContent = 'Kamera tidak ditemukan atau tidak diizinkan.';
+        console.error('Camera error:', err);
+      }
+    }
+
+    function createTempDisplay() {
+      if (!tempDisplay) {
+        tempDisplay = document.createElement('div');
+        tempDisplay.className = 'temp-display';
+        document.querySelector('.video-container').appendChild(tempDisplay);
+      }
+      return tempDisplay;
+    }
+
+    function updateTempDisplay(box, temp) {
+      const display = createTempDisplay();
+      display.textContent = `${temp}°C`;
+      display.style.display = 'block';
+      display.style.left = `${box.left + (box.width / 2)}px`;
+      display.style.top = `${box.top - 40}px`;
+      display.style.transform = 'translateX(-50%)';
+    }
+
+    function hideTempDisplay() {
+      if (tempDisplay) {
+        tempDisplay.style.display = 'none';
+      }
+    }
+
+    function rotateCamera() {
+      cameraRotation = (cameraRotation + 90) % 360;
+
+      const video = document.getElementById('video');
+      const indicator = document.getElementById('cameraRotateIndicator');
+
+      const currentTransform = video.style.transform || '';
+      let baseTransform = '';
+
+      const translateMatch = currentTransform.match(/translate\([^)]+\)/);
+      if (translateMatch) {
+        baseTransform = translateMatch[0];
+      }
+
+      if (cameraRotation === 0) {
+        video.style.transform = baseTransform || 'rotate(0deg)';
+      } else {
+        video.style.transform = baseTransform ?
+          `${baseTransform} rotate(${cameraRotation}deg)` :
+          `rotate(${cameraRotation}deg)`;
+      }
+
+      if (indicator) {
+        indicator.textContent = `${cameraRotation}°`;
+        indicator.classList.add('show');
+        setTimeout(() => {
+          indicator.classList.remove('show');
+        }, 2000);
+      }
+
+      console.log('Camera rotated to:', cameraRotation, 'degrees');
+    }
+
+    function adjustPositionForRotation(x, y, videoElement) {
+      const videoWidth = videoElement.videoWidth || videoElement.clientWidth;
+      const videoHeight = videoElement.videoHeight || videoElement.clientHeight;
+      const clientWidth = videoElement.clientWidth;
+      const clientHeight = videoElement.clientHeight;
+
+      let adjustedX = x;
+      let adjustedY = y;
+
+      const scaleX = clientWidth / videoWidth;
+      const scaleY = clientHeight / videoHeight;
+
+      adjustedX = x * scaleX;
+      adjustedY = y * scaleY;
+
+      if (cameraRotation === 90) {
+
+        const tempX = adjustedX;
+        adjustedX = clientHeight - adjustedY;
+        adjustedY = tempX;
+      } else if (cameraRotation === 180) {
+
+        adjustedX = clientWidth - adjustedX;
+        adjustedY = clientHeight - adjustedY;
+      } else if (cameraRotation === 270) {
+
+        const tempX = adjustedX;
+        adjustedX = adjustedY;
+        adjustedY = clientWidth - tempX;
+      }
+
+      return { x: adjustedX, y: adjustedY };
+    }
+
+    function createFacialDots(landmarks, faceBox) {
+
+      faceDots.forEach(dot => dot.remove());
+      faceDots = [];
+
+      return;
+    }
+
+    function clearFacialDots() {
+      faceDots.forEach(dot => dot.remove());
+      faceDots = [];
+    }
+
+    async function loadRegisteredFaces() {
+      try {
+        const { data, error } = await supabase
+          .from('registered_faces')
+          .select('*')
+          .eq('is_active', true);
+
+        if (error) throw error;
+
+        registeredFaces = data || [];
+        return registeredFaces;
+      } catch (error) {
+        registeredFaces = [];
+        return [];
+      }
+    }
+
+    function connectWebSocket() {
+
+      if (typeof io === 'undefined') {
+        console.log('ℹ Socket.IO tidak tersedia - notifikasi realtime dinonaktifkan');
+        return;
+      }
+
+      try {
+        socket = io(SERVER_URL, {
+          reconnection: false, // Jangan auto-reconnect jika server tidak ada
+          timeout: 5000 // 5 detik timeout
+        });
+
+        socket.on('connect', () => {
+          console.log(' WebSocket connected untuk notifikasi admin');
+        });
+
+        socket.on('disconnect', () => {
+          console.log('ℹ WebSocket disconnected');
+        });
+
+        socket.on('connect_error', () => {
+          console.log('ℹ WebSocket server tidak tersedia - notifikasi realtime dinonaktifkan');
+          socket = null; // Clear socket agar tidak retry
+        });
+      } catch (error) {
+        console.log('ℹ WebSocket error:', error.message);
+        socket = null;
+      }
+    }
+
+    function showShortcutInfo(message) {
+      const infoBar = document.getElementById('shortcutInfoBar');
+      const infoText = document.getElementById('shortcutInfoText');
+      if (infoBar && infoText) {
+        infoText.textContent = message;
+        infoBar.style.display = 'block';
+        setTimeout(() => {
+          hideShortcutInfo();
+        }, 3000);
+      }
+    }
+
+    function hideShortcutInfo() {
+      const infoBar = document.getElementById('shortcutInfoBar');
+      if (infoBar) {
+        infoBar.style.display = 'none';
+      }
+    }
+
+    document.addEventListener('keydown', function (e) {
+
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+      }
+
+      const isNumber = /^[0-9]$/.test(e.key);
+      if (isNumber) {
+        const num = parseInt(e.key);
+        e.preventDefault();
+
+        switch (num) {
+          case 1:
+
+            showShortcutInfo('Tekan [2] untuk Scan Manual, [3] untuk Menu, [4] untuk Rotate');
+            break;
+          case 2:
+
+            window.location.href = 'scan-manual.html';
+            break;
+          case 3:
+
+            const menuBtn = document.getElementById('menuBtn');
+            if (menuBtn) {
+              toggleMenu();
+            }
+            break;
+          case 4:
+
+            rotateCamera();
+            break;
+        }
+      }
+    });
+
+    function notifyAdminGuestAccess(guestData) {
+      if (!socket || !socket.connected) {
+        return;
+      }
+
+      socket.emit('guest-emergency-access', {
+        scanId: guestData.scanId,
+        timestamp: new Date().toISOString(),
+        photoPath: guestData.photoPath,
+        message: `Guest Emergency mengakses sistem - Scan ID: ${guestData.scanId}`
+      });
+    }
+
+    async function runFaceDetection() {
+
+      await faceapi.nets.tinyFaceDetector.loadFromUri('./weights/models/tiny_face_detector');
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri('./weights/models/face_landmark_68_tiny');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('./weights/models/face_recognition');
+
+      await loadRegisteredFaces();
+      connectWebSocket();
+
+      const detect = async () => {
+        if (!scanning) return;
+        if (video.readyState === 4) {
+
+          const result = await faceapi
+            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+            .withFaceLandmarks(true);
+
+          if (result) {
+
+            if (!currentTemperature || Math.random() < 0.1) {
+              currentTemperature = generateBodyTemperature();
+            }
+
+            const dims = faceapi.matchDimensions(canvas, video, true);
+            const resized = faceapi.resizeResults(result, dims);
+
+            if (!resized || !resized.detection || !resized.detection.box) {
+              requestAnimationFrame(detect);
+              return;
+            }
+
+            const box = resized.detection.box;
+
+            const videoWidth = video.videoWidth || video.clientWidth;
+            const videoHeight = video.videoHeight || video.clientHeight;
+            const clientWidth = video.clientWidth;
+            const clientHeight = video.clientHeight;
+
+            const scaleX = clientWidth / videoWidth;
+            const scaleY = clientHeight / videoHeight;
+
+            let adjustedBox = {
+              left: box.left * scaleX,
+              top: box.top * scaleY,
+              width: box.width * scaleX,
+              height: box.height * scaleY
+            };
+
+            if (cameraRotation === 90) {
+              const tempLeft = adjustedBox.left;
+              adjustedBox.left = clientHeight - (adjustedBox.top + adjustedBox.height);
+              adjustedBox.top = tempLeft;
+              const tempWidth = adjustedBox.width;
+              adjustedBox.width = adjustedBox.height;
+              adjustedBox.height = tempWidth;
+            } else if (cameraRotation === 180) {
+              adjustedBox.left = clientWidth - (adjustedBox.left + adjustedBox.width);
+              adjustedBox.top = clientHeight - (adjustedBox.top + adjustedBox.height);
+            } else if (cameraRotation === 270) {
+              const tempLeft = adjustedBox.left;
+              adjustedBox.left = adjustedBox.top;
+              adjustedBox.top = clientWidth - (tempLeft + adjustedBox.width);
+              const tempWidth = adjustedBox.width;
+              adjustedBox.width = adjustedBox.height;
+              adjustedBox.height = tempWidth;
+            }
+
+            const faceWidthRatio = adjustedBox.width / clientWidth;
+
+            const referenceRatio = 0.25; // 25% pada jarak 0.5m (asumsi)
+            const referenceDistance = 0.5; // 0.5 meter (asumsi)
+            let distance = 0;
+            if (faceWidthRatio > 0) {
+              distance = (referenceRatio / faceWidthRatio) * referenceDistance;
+              distance = Math.max(0.1, Math.min(5, distance));
+            } else {
+              distance = 5;
+            }
+
+            if (faceWidthRatio >= SCAN_RATIO_THRESHOLD) {
+              faceDetected = true;
+              statusText.textContent = `Wajah terdeteksi, menyimpan... (${currentTemperature}°C)`;
+              faceBox.style.display = 'block';
+              faceBox.style.left = `${adjustedBox.left}px`;
+              faceBox.style.top = `${adjustedBox.top}px`;
+              faceBox.style.width = `${adjustedBox.width}px`;
+              faceBox.style.height = `${adjustedBox.height}px`;
+              faceBox.style.borderColor = '#10b981'; // Green untuk jarak optimal
+
+              updateTempDisplay({
+                left: adjustedBox.left,
+                top: adjustedBox.top,
+                width: adjustedBox.width
+              }, currentTemperature);
+
+              if (result.landmarks) {
+
+                const scaledLandmarks = result.landmarks.positions.map(p => ({
+                  x: p.x * scaleX,
+                  y: p.y * scaleY
+                }));
+                createFacialDots(scaledLandmarks, faceBox);
+              }
+
+              temperatures.push(currentTemperature);
+
+              if (voiceEnabled && (!wasInVoiceRange || (!isSpeaking && (Date.now() - lastVoiceTime) >= VOICE_COOLDOWN))) {
+                speakText('Tolong dekatkan wajah anda ke depan kamera');
+              }
+              wasInVoiceRange = true; // Set flag bahwa wajah sekarang dalam range
+
+              scanning = false;
+              setTimeout(captureAndUpload, 500);
+              return;
+            }
+
+            else if (faceWidthRatio >= VOICE_MIN_RATIO && faceWidthRatio < SCAN_RATIO_THRESHOLD) {
+              statusText.textContent = `Dekatkan wajah ke kamera (${currentTemperature}°C)`;
+              faceBox.style.display = 'block';
+              faceBox.style.left = `${adjustedBox.left}px`;
+              faceBox.style.top = `${adjustedBox.top}px`;
+              faceBox.style.width = `${adjustedBox.width}px`;
+              faceBox.style.height = `${adjustedBox.height}px`;
+              faceBox.style.borderColor = '#f59e0b'; // Orange untuk jarak suara aktif
+
+              updateTempDisplay({
+                left: adjustedBox.left,
+                top: adjustedBox.top,
+                width: adjustedBox.width
+              }, currentTemperature);
+
+              if (result.landmarks) {
+                const scaledLandmarks = result.landmarks.positions.map(p => ({
+                  x: p.x * scaleX,
+                  y: p.y * scaleY
+                }));
+                createFacialDots(scaledLandmarks, faceBox);
+              }
+
+              if (voiceEnabled && (!wasInVoiceRange || (!isSpeaking && (Date.now() - lastVoiceTime) >= VOICE_COOLDOWN))) {
+                speakText('Tolong dekatkan wajah anda ke depan kamera');
+              }
+              wasInVoiceRange = true; // Set flag bahwa wajah sekarang dalam range
+            } else if (faceWidthRatio < VOICE_MIN_RATIO) {
+
+              statusText.textContent = `Terlalu jauh, dekatkan wajah ke kamera`;
+              faceBox.style.display = 'block';
+              faceBox.style.left = `${adjustedBox.left}px`;
+              faceBox.style.top = `${adjustedBox.top}px`;
+              faceBox.style.width = `${adjustedBox.width}px`;
+              faceBox.style.height = `${adjustedBox.height}px`;
+              faceBox.style.borderColor = '#f59e0b'; // Orange untuk jarak jauh
+              wasInVoiceRange = false; // Reset flag ketika keluar dari range
+            } else {
+
+              statusText.textContent = `Dekatkan lagi ke kamera`;
+              faceBox.style.display = 'block';
+              faceBox.style.left = `${adjustedBox.left}px`;
+              faceBox.style.top = `${adjustedBox.top}px`;
+              faceBox.style.width = `${adjustedBox.width}px`;
+              faceBox.style.height = `${adjustedBox.height}px`;
+              faceBox.style.borderColor = '#3b82f6'; // Blue untuk jarak sedang
+              wasInVoiceRange = false; // Reset flag
+            }
+          } else {
+
+            wasInVoiceRange = false;
+            currentTemperature = null;
+            faceBox.style.display = 'none';
+            hideTempDisplay();
+            clearFacialDots();
+            statusText.textContent = 'Arahkan wajah ke kamera';
+          }
+        }
+        requestAnimationFrame(detect);
+      };
+      detect();
+    }
+
+    async function captureAndUpload() {
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      statusText.textContent = 'Mengidentifikasi wajah...';
+
+      let faceDetection = null;
+      let faceDescriptor = null;
+      let matchedUser = null;
+
+      try {
+
+        faceDetection = await faceapi.detectSingleFace(
+          canvas,
+          new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
+        );
+
+        if (faceDetection) {
+
+          faceDescriptor = await extractFaceDescriptor(faceDetection, canvas);
+
+          if (faceDescriptor && registeredFaces.length > 0) {
+
+            const match = findBestMatch(faceDescriptor, registeredFaces, FACE_MATCH_THRESHOLD);
+
+            if (match && match.similarity >= FACE_MATCH_THRESHOLD) {
+
+              matchedUser = match.face;
+              console.log(' Face matched:', matchedUser.name, 'Similarity:', match.similarity);
+              statusText.textContent = `Selamat datang, ${matchedUser.name}!`;
+            } else {
+
+              matchedUser = null;
+              console.log(' No valid match found. Similarity:', match ? match.similarity : 'N/A');
+              statusText.textContent = 'Mode Emergency - Akses Diberikan';
+            }
+          } else {
+            statusText.textContent = 'Mode Emergency - Akses Diberikan';
+          }
+        } else {
+          statusText.textContent = 'Mode Emergency - Akses Diberikan';
+        }
+      } catch (error) {
+        statusText.textContent = 'Mode Emergency - Akses Diberikan';
+      }
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+
+        const now = new Date();
+        const tahun = now.getFullYear();
+        const bulan = now.getMonth() + 1; // 1-12
+        const bulanNama = now.toLocaleDateString('id-ID', { month: 'long' });
+        const tanggal = now.getDate();
+
+        const timestamp = Date.now();
+        const fileName = `${tahun}/${bulanNama}/${tanggal}/scan_${timestamp}.jpg`;
+
+        const scanId = `scan_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+
+        statusText.textContent = 'Mengupload...';
+        try {
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('faces')
+            .upload(fileName, blob, {
+              contentType: 'image/jpeg',
+              upsert: false
+            });
+
+          if (uploadError) throw uploadError;
+
+          if (!matchedUser && faceDescriptor) {
+            try {
+              const guestId = `guest_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+              const serializedDescriptor = serializeDescriptor(faceDescriptor);
+
+              const { data: guestData, error: guestError } = await supabase
+                .from('registered_faces')
+                .insert([
+                  {
+                    id: guestId,
+                    name: 'Guest Emergency',
+                    nik: `GUEST-${timestamp}`,
+                    email: null,
+                    face_descriptor: serializedDescriptor,
+                    registered_at: now.toISOString(),
+                    registered_by: 'system',
+                    is_active: true,
+                    is_guest: true,
+                    guest_type: 'emergency',
+                    photo_path: fileName
+                  }
+                ])
+                .select();
+
+              if (guestError) {
+              } else {
+
+                notifyAdminGuestAccess({
+                  scanId: scanId,
+                  photoPath: fileName,
+                  guestId: guestId
+                });
+
+                matchedUser = {
+                  id: guestId,
+                  name: 'Guest Emergency',
+                  nik: `GUEST-${timestamp}`,
+                  is_guest: true
+                };
+              }
+            } catch (guestErr) {
+            }
+          }
+
+          const avgTemperature = temperatures.length > 0 ?
+            (temperatures.reduce((a, b) => a + b, 0) / temperatures.length).toFixed(1) :
+            currentTemperature || null;
+
+          const { data: scanData, error: scanError } = await supabase
+            .from('face_scans')
+            .insert([
+              {
+                scanid: scanId,
+                imagepath: fileName,
+                scantime: now.toISOString(),
+                isemergency: false,
+                telegrammessagesent: false,
+                usernote: matchedUser ?
+                  (matchedUser.is_guest ? 'Guest Emergency Access' : `Scan wajah berhasil - ${matchedUser.name}`) :
+                  'Scan wajah berhasil',
+                body_temperature: avgTemperature
+              }
+            ])
+            .select();
+
+          if (scanError) {
+            throw scanError;
+          }
+
+          const { data: urlData } = supabase.storage
+            .from('faces')
+            .getPublicUrl(fileName);
+
+          const photoUrl = urlData?.publicUrl || null;
+
+          localStorage.setItem('current_scan_id', scanId);
+          localStorage.setItem('scan_timestamp', now.toISOString());
+          localStorage.setItem('image_path', fileName);
+          localStorage.setItem('user_photo', photoUrl); // Save photo URL
+          localStorage.setItem('body_temperature', avgTemperature || ''); // Save temperature
+
+          if (matchedUser && matchedUser.id && matchedUser.name) {
+
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('user_name');
+            localStorage.removeItem('user_nik');
+            localStorage.removeItem('is_guest');
+            localStorage.removeItem('access_type');
+
+            localStorage.setItem('user_id', matchedUser.id);
+            localStorage.setItem('user_name', matchedUser.name);
+            localStorage.setItem('user_nik', matchedUser.nik || '');
+            localStorage.setItem('is_guest', matchedUser.is_guest ? 'true' : 'false');
+            localStorage.setItem('access_type', matchedUser.is_guest ? 'guest_emergency' : 'registered');
+
+            console.log(' User data saved to localStorage:', matchedUser.name);
+          } else {
+
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('user_name');
+            localStorage.removeItem('user_nik');
+            localStorage.removeItem('is_guest');
+            localStorage.setItem('access_type', 'unknown');
+            console.log(' No user data saved - no valid match');
+          }
+
+          statusText.textContent = matchedUser ?
+            (matchedUser.is_guest ? 'Mode Emergency - Menuju dashboard...' : 'Berhasil! Menuju dashboard...') :
+            'Berhasil! Menuju dashboard...';
+
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1200);
+
+        } catch (e) {
+          statusText.textContent = 'Gagal upload ke server: ' + (e.message || 'Unknown error');
+          scanning = true;
+          setTimeout(runFaceDetection, 2000);
+        }
+      }, 'image/jpeg', 0.9);
+    }
+
+    window.addEventListener('beforeunload', () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+      }
+    });
+
+    function toggleMenu() {
+      const dropdown = document.getElementById('dropdownMenu');
+      dropdown.classList.toggle('active');
+    }
+
+    document.addEventListener('click', (e) => {
+      const menuBtn = document.getElementById('menuBtn');
+      const dropdown = document.getElementById('dropdownMenu');
+
+      if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    window.onload = () => {
+
+      initVoice();
+
+      startCamera();
+    };
+  </script>
+
+  <script src="kiosk-mode.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,24 @@
+services:
+  # Main Web Service
+  - type: web
+    name: emergency-hotline-system
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    # Health check untuk memastikan server jalan
+    healthCheckPath: /
+
+  # Telegram Server (Background Worker)
+  - type: worker
+    name: telegram-bot-worker
+    env: node
+    buildCommand: npm install
+    startCommand: node telegram-server.js
+    envVars:
+      - key: NODE_ENV
+        value: production

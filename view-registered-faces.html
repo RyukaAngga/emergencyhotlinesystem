@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Daftar Wajah Terdaftar - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f9fafb;
+            color: #111827;
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: white;
+            padding: 16px 24px;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-email {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f3f4f6;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: #fecaca;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .stat-icon.secondary {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .stat-icon.success {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .stat-icon.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f3f4f6;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .filter-select,
+        .filter-input {
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            background: white;
+            color: #111827;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 150px;
+        }
+
+        .filter-input {
+            cursor: text;
+        }
+
+        .filter-select:hover,
+        .filter-input:hover {
+            border-color: #dc2626;
+        }
+
+        .filter-select:focus,
+        .filter-input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: #b91c1c;
+        }
+
+        .table-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f3f4f6;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .table-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            color: #9ca3af;
+        }
+
+        .search-box input {
+            padding: 10px 16px 10px 40px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 300px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            cursor: grab;
+        }
+
+        .table-wrapper:active {
+            cursor: grabbing;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 16px;
+            font-size: 14px;
+            color: #111827;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .face-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .face-image:hover {
+            transform: scale(1.1);
+            border-color: #dc2626;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .face-image-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 24px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-registered {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .badge-guest {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .badge-inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-view {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .btn-view:hover {
+            background: #bfdbfe;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+        .btn-toggle {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .btn-toggle:hover {
+            background: #fde68a;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top-color: #dc2626;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px solid #f3f4f6;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            padding: 8px 16px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .modal-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .modal-info {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .info-value {
+            color: #111827;
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-controls {
+                width: 100%;
+            }
+
+            .filter-select,
+            .filter-input {
+                width: 100%;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .table-wrapper {
+                overflow-x: scroll;
+            }
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 8px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: right;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toast::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .toast.success::before {
+            background: #10b981;
+        }
+
+        .toast.error::before {
+            background: #ef4444;
+        }
+
+        .toast.warning::before {
+            background: #f59e0b;
+        }
+
+        .toast.info::before {
+            background: #3b82f6;
+        }
+
+        .toast.hiding {
+            animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .toast.success .toast-icon {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .toast.error .toast-icon {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .toast.warning .toast-icon {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .toast.info .toast-icon {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .toast-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .toast-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.4;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        @media (max-width: 640px) {
+            .toast-container {
+                top: auto;
+                bottom: 20px;
+                right: 12px;
+                left: 12px;
+                max-width: none;
+            }
+
+            .toast {
+                min-width: auto;
+                width: 100%;
+            }
+        }
+
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s;
+        }
+
+        .confirm-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .confirm-dialog {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            animation: scaleIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .confirm-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 16px;
+        }
+
+        .confirm-icon.warning {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .confirm-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .confirm-message {
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            white-space: pre-line;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .confirm-btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            flex: 1;
+        }
+
+        .confirm-btn-cancel {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .confirm-btn-cancel:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .confirm-btn-confirm {
+            background: #dc2626;
+            color: white;
+        }
+
+        .confirm-btn-confirm:hover {
+            background: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-dialog">
+            <div class="confirm-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="confirm-title" id="confirmTitle">Konfirmasi</div>
+            <div class="confirm-message" id="confirmMessage">Apakah Anda yakin?</div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-btn-cancel" id="confirmCancel">
+                    Batal
+                </button>
+                <button class="confirm-btn confirm-btn-confirm" id="confirmOk">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-logo">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="header-title">
+                    <h1>Daftar Wajah Terdaftar</h1>
+                    <p>Kelola wajah yang terdaftar di sistem</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="admin.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Kembali
+                </a>
+                <div class="user-info">
+                    <div class="user-email" id="userEmail">Loading...</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Total Terdaftar</div>
+                    </div>
+                    <div class="stat-icon secondary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="statRegistered">0</div>
+                        <div class="stat-label">User Terdaftar</div>
+                    </div>
+                    <div class="stat-icon success">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="statGuest">0</div>
+                        <div class="stat-label">Guest Emergency</div>
+                    </div>
+                    <div class="stat-icon warning">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="statActive">0</div>
+                        <div class="stat-label">Aktif</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <i class="fas fa-filter"></i>
+                    Filter
+                </div>
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterType">Tipe User</label>
+                        <select id="filterType" class="filter-select">
+                            <option value="">Semua</option>
+                            <option value="registered">User Terdaftar</option>
+                            <option value="guest">Guest Emergency</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterStatus">Status</label>
+                        <select id="filterStatus" class="filter-select">
+                            <option value="">Semua</option>
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Tidak Aktif</option>
+                        </select>
+                    </div>
+                    <button class="refresh-btn" onclick="loadAllData()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <h2>
+                    <i class="fas fa-table"></i>
+                    Data Wajah Terdaftar
+                </h2>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Cari nama, NIK...">
+                </div>
+            </div>
+
+            <div id="loadingState" class="loading">
+                <div class="loading-spinner"></div>
+                <p>Memuat data...</p>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3>Tidak Ada Data</h3>
+                <p>Belum ada wajah yang terdaftar</p>
+            </div>
+
+            <div id="tableContainer" style="display: none;">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Foto</th>
+                                <th>Nama</th>
+                                <th>NIK</th>
+                                <th>Email</th>
+                                <th>Tipe</th>
+                                <th>Status</th>
+                                <th>Tanggal Daftar</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <div class="pagination-info" id="paginationInfo">
+                        Showing 1-10 of 100
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="pagination-btn" id="prevPageBtn">
+                            <i class="fas fa-chevron-left"></i> Prev
+                        </button>
+                        <button class="pagination-btn active" id="currentPageBtn">1</button>
+                        <button class="pagination-btn" id="nextPageBtn">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-info-circle"></i>
+                    Detail Wajah Terdaftar
+                </h3>
+                <button class="modal-close" id="closeModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+
+        function showToast(message, type = 'info', title = null) {
+            console.log(`[${type.toUpperCase()}] ${title || type}: ${message}`);
+            
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            };
+            
+            const titles = {
+                success: title || 'Berhasil',
+                error: title || 'Gagal',
+                warning: title || 'Peringatan',
+                info: title || 'Informasi'
+            };
+            
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas ${icons[type]}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${titles[type]}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        function showConfirm(message, title = 'Konfirmasi') {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('confirmOverlay');
+                const titleEl = document.getElementById('confirmTitle');
+                const messageEl = document.getElementById('confirmMessage');
+                const cancelBtn = document.getElementById('confirmCancel');
+                const okBtn = document.getElementById('confirmOk');
+                
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                overlay.classList.add('active');
+                
+                function cleanup() {
+                    overlay.classList.remove('active');
+                    cancelBtn.onclick = null;
+                    okBtn.onclick = null;
+                }
+                
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    resolve(false);
+                };
+                
+                okBtn.onclick = () => {
+                    cleanup();
+                    resolve(true);
+                };
+                
+                overlay.onclick = (e) => {
+                    if (e.target === overlay) {
+                        cleanup();
+                        resolve(false);
+                    }
+                };
+            });
+        }
+
+        const SUPABASE_URL = 'https://fvayuhanwcwinkvvvisk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2YXl1aGFud2N3aW5rdnZ2aXNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MDk1NTYsImV4cCI6MjA3NTQ4NTU1Nn0.AP0ZYsrUQ1ACD7fmX1wTM88_zzMtvyKXmgc9wCVvRrM';
+        const STORAGE_BUCKET = 'faces';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function deleteViaServer(faceId) {
+            try {
+                const response = await fetch('/api/delete-face', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ faceId })
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to delete');
+                }
+
+                return result;
+            } catch (error) {
+                console.error('Server delete error:', error);
+                throw error;
+            }
+        }
+
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let allFaces = [];
+        let filteredFaces = [];
+        let currentUser = null;
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'login-admin.html';
+                return;
+            }
+
+            currentUser = session.user;
+            document.getElementById('userEmail').textContent = currentUser.email;
+
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (!session) {
+                    window.location.href = 'login-admin.html';
+                }
+            });
+        }
+
+        function showLoading(show) {
+            const loadingState = document.getElementById('loadingState');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            if (show) {
+                loadingState.style.display = 'block';
+                tableContainer.style.display = 'none';
+            } else {
+                loadingState.style.display = 'none';
+            }
+        }
+
+        async function loadAllData() {
+            try {
+                showLoading(true);
+
+                const { data, error } = await supabase
+                    .from('registered_faces')
+                    .select('*')
+                    .order('registered_at', { ascending: false });
+
+                if (error) throw error;
+
+                allFaces = data || [];
+                filteredFaces = [...allFaces];
+
+                updateStatistics();
+                renderTable();
+                showLoading(false);
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showLoading(false);
+                showToast('Gagal memuat data: ' + error.message, 'error');
+            }
+        }
+
+        function updateStatistics() {
+            const total = allFaces.length;
+            const registered = allFaces.filter(f => !f.is_guest).length;
+            const guest = allFaces.filter(f => f.is_guest).length;
+            const active = allFaces.filter(f => f.is_active).length;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statRegistered').textContent = registered;
+            document.getElementById('statGuest').textContent = guest;
+            document.getElementById('statActive').textContent = active;
+        }
+
+        function applyFilters() {
+            const type = document.getElementById('filterType').value;
+            const status = document.getElementById('filterStatus').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredFaces = allFaces.filter(face => {
+
+                if (type === 'registered' && face.is_guest) return false;
+                if (type === 'guest' && !face.is_guest) return false;
+
+                if (status === 'active' && !face.is_active) return false;
+                if (status === 'inactive' && face.is_active) return false;
+
+                if (searchTerm) {
+                    const nameMatch = face.name?.toLowerCase().includes(searchTerm);
+                    const nikMatch = face.nik?.toLowerCase().includes(searchTerm);
+                    const emailMatch = face.email?.toLowerCase().includes(searchTerm);
+                    if (!nameMatch && !nikMatch && !emailMatch) return false;
+                }
+
+                return true;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        document.getElementById('filterType').addEventListener('change', applyFilters);
+        document.getElementById('filterStatus').addEventListener('change', applyFilters);
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredFaces.slice(startIndex, endIndex);
+
+            if (filteredFaces.length === 0) {
+                document.getElementById('tableContainer').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+
+            tbody.innerHTML = '';
+
+            pageData.forEach(face => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        ${getImageHTML(face.photo_path, face.id)}
+                    </td>
+                    <td><strong>${face.name || '-'}</strong></td>
+                    <td>${face.nik || '-'}</td>
+                    <td>${face.email || '-'}</td>
+                    <td>
+                        <span class="badge ${face.is_guest ? 'badge-guest' : 'badge-registered'}">
+                            ${face.is_guest ? '<i class="fas fa-user-clock"></i> Guest' : '<i class="fas fa-user-check"></i> Terdaftar'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${face.is_active ? 'badge-registered' : 'badge-inactive'}">
+                            ${face.is_active ? '<i class="fas fa-check"></i> Aktif' : '<i class="fas fa-times"></i> Tidak Aktif'}
+                        </span>
+                    </td>
+                    <td>${formatDateTime(face.registered_at)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-icon btn-view" onclick="viewDetail('${face.id}')" title="Lihat Detail">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon btn-toggle" onclick="toggleActive('${face.id}', ${face.is_active})" title="${face.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                                <i class="fas fa-${face.is_active ? 'ban' : 'check'}"></i>
+                            </button>
+                            <button class="btn-icon btn-delete" onclick="deleteFace('${face.id}')" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updatePagination();
+        }
+
+        function getImageHTML(imagePath, faceId) {
+            if (!imagePath) {
+                return `<div class="face-image-placeholder"><i class="fas fa-user"></i></div>`;
+            }
+
+            const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(imagePath);
+            
+            if (data && data.publicUrl) {
+                return `<img src="${data.publicUrl}" alt="${faceId}" class="face-image" onclick="viewImageModal('${data.publicUrl}')">`;
+            } else {
+                return `<div class="face-image-placeholder"><i class="fas fa-image"></i></div>`;
+            }
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return '-';
+            
+            const date = new Date(dateString);
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Jakarta'
+            };
+            
+            return date.toLocaleDateString('id-ID', options);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            
+            const date = new Date(dateString);
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'Asia/Jakarta'
+            };
+            
+            return date.toLocaleDateString('id-ID', options);
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredFaces.length / itemsPerPage);
+            const start = (currentPage - 1) * itemsPerPage + 1;
+            const end = Math.min(currentPage * itemsPerPage, filteredFaces.length);
+
+            document.getElementById('paginationInfo').textContent = 
+                `Showing ${start}-${end} of ${filteredFaces.length}`;
+            
+            document.getElementById('currentPageBtn').textContent = currentPage;
+            document.getElementById('prevPageBtn').disabled = currentPage === 1;
+            document.getElementById('nextPageBtn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        document.getElementById('prevPageBtn').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+
+        document.getElementById('nextPageBtn').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredFaces.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
+        function viewDetail(faceId) {
+            const face = allFaces.find(f => f.id === faceId);
+            if (!face) return;
+
+            const modal = document.getElementById('detailModal');
+            const modalBody = document.getElementById('modalBody');
+
+            let imageHTML = '';
+            if (face.photo_path) {
+                const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(face.photo_path);
+                if (data && data.publicUrl) {
+                    imageHTML = `<img src="${data.publicUrl}" alt="${face.name}" class="modal-image">`;
+                }
+            }
+
+            modalBody.innerHTML = `
+                ${imageHTML}
+                <div class="modal-info">
+                    <div class="info-row">
+                        <span class="info-label">ID:</span>
+                        <span class="info-value">${face.id}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Nama:</span>
+                        <span class="info-value">${face.name || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">NIK:</span>
+                        <span class="info-value">${face.nik || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tempat/Tgl Lahir:</span>
+                        <span class="info-value">${face.tempat_lahir || '-'}${face.tanggal_lahir ? ', ' + formatDate(face.tanggal_lahir) : ''}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Jenis Kelamin:</span>
+                        <span class="info-value">${face.jenis_kelamin || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Agama:</span>
+                        <span class="info-value">${face.agama || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Pekerjaan:</span>
+                        <span class="info-value">${face.pekerjaan || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Kewarganegaraan:</span>
+                        <span class="info-value">${face.kewarganegaraan || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Alamat:</span>
+                        <span class="info-value">
+                            ${face.rt || face.rw || face.kelurahan || face.kecamatan ? 
+                                `RT ${face.rt || '-'} / RW ${face.rw || '-'}, ${face.kelurahan || '-'}, Kec. ${face.kecamatan || '-'}` 
+                                : '-'}
+                            ${face.alamat_lengkap ? `<br><small style="opacity: 0.8;">${face.alamat_lengkap}</small>` : ''}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">${face.email || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">No. HP/WA:</span>
+                        <span class="info-value">${face.no_hp || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tipe:</span>
+                        <span class="info-value">
+                            <span class="badge ${face.is_guest ? 'badge-guest' : 'badge-registered'}">
+                                ${face.is_guest ? 'Guest Emergency' : 'User Terdaftar'}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">
+                            <span class="badge ${face.is_active ? 'badge-registered' : 'badge-inactive'}">
+                                ${face.is_active ? 'Aktif' : 'Tidak Aktif'}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Didaftarkan oleh:</span>
+                        <span class="info-value">${face.registered_by || 'system'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tanggal Daftar:</span>
+                        <span class="info-value">${formatDateTime(face.registered_at)}</span>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function viewImageModal(imageUrl) {
+            const modal = document.getElementById('detailModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalBody.innerHTML = `<img src="${imageUrl}" alt="Preview" class="modal-image">`;
+            modal.classList.add('active');
+        }
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            document.getElementById('detailModal').classList.remove('active');
+        });
+
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') {
+                document.getElementById('detailModal').classList.remove('active');
+            }
+        });
+
+        async function toggleActive(faceId, currentStatus) {
+            const action = currentStatus ? 'menonaktifkan' : 'mengaktifkan';
+            const confirmed = await showConfirm(
+                `Apakah Anda yakin ingin ${action} wajah ini?`,
+                'Konfirmasi Perubahan Status'
+            );
+            
+            if (!confirmed) return;
+
+            try {
+                console.log(`Toggling face status: ${faceId} to ${!currentStatus}`);
+                const { error } = await supabase
+                    .from('registered_faces')
+                    .update({ is_active: !currentStatus })
+                    .eq('id', faceId);
+
+                if (error) throw error;
+
+                await loadAllData();
+                showToast(`Wajah berhasil ${currentStatus ? 'dinonaktifkan' : 'diaktifkan'}`, 'success');
+            } catch (error) {
+                console.error('Error toggling status:', error);
+                showToast('Gagal mengubah status: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteFace(faceId) {
+            const face = allFaces.find(f => f.id === faceId);
+            if (!face) {
+                console.error('Face not found in local data');
+                showToast('Data wajah tidak ditemukan', 'error');
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                `Apakah Anda yakin ingin menghapus wajah "${face.name}"?\n\nTindakan ini tidak dapat dibatalkan.`,
+                'Konfirmasi Hapus'
+            );
+            
+            if (!confirmed) {
+                console.log('Delete cancelled by user');
+                return;
+            }
+
+            try {
+                console.log(`Deleting face: ${faceId}`, face);
+
+                const { data: checkData, error: checkError } = await supabase
+                    .from('registered_faces')
+                    .select('id')
+                    .eq('id', faceId)
+                    .single();
+
+                console.log('Check if exists:', { checkData, checkError });
+
+                if (checkError || !checkData) {
+                    console.warn('Data not found in database, might be already deleted');
+                    showToast('Data sudah tidak ada di database. Mungkin sudah dihapus sebelumnya.', 'warning');
+                    await loadAllData(); // Refresh untuk update tampilan
+                    return;
+                }
+
+                const { data, error, count } = await supabase
+                    .from('registered_faces')
+                    .delete()
+                    .eq('id', faceId)
+                    .select();
+
+                console.log('Delete response:', { data, error, count, dataLength: data?.length });
+
+                if (error) {
+                    console.error('Supabase delete error:', error);
+                    throw error;
+                }
+
+                if (!data || data.length === 0) {
+                    console.warn('No rows were deleted despite no error');
+
+                    const { data: recheck } = await supabase
+                        .from('registered_faces')
+                        .select('id')
+                        .eq('id', faceId);
+
+                    if (!recheck || recheck.length === 0) {
+                        console.log('Data confirmed deleted (probably by another process)');
+                        showToast('Data berhasil dihapus', 'success');
+                    } else {
+                        console.error('Data still exists after delete attempt');
+                        showToast('Gagal menghapus data. Silakan coba lagi atau hubungi administrator.', 'error');
+                        return;
+                    }
+                } else {
+                    console.log('Successfully deleted:', data);
+                }
+
+                if (face.photo_path) {
+                    console.log(`Attempting to delete photo: ${face.photo_path}`);
+                    const { error: storageError } = await supabase.storage
+                        .from(STORAGE_BUCKET)
+                        .remove([face.photo_path]);
+                    
+                    if (storageError) {
+                        console.warn('Failed to delete photo from storage:', storageError);
+                    } else {
+                        console.log('Photo deleted from storage successfully');
+                    }
+                }
+
+                await loadAllData();
+                showToast('Wajah berhasil dihapus', 'success');
+            } catch (error) {
+                console.error('Error deleting face:', error);
+                showToast('Gagal menghapus wajah: ' + error.message, 'error');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadAllData();
+
+            const tableWrapper = document.querySelector('.table-wrapper');
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            tableWrapper.addEventListener('mousedown', (e) => {
+                isDown = true;
+                tableWrapper.style.cursor = 'grabbing';
+                startX = e.pageX - tableWrapper.offsetLeft;
+                scrollLeft = tableWrapper.scrollLeft;
+            });
+
+            tableWrapper.addEventListener('mouseleave', () => {
+                isDown = false;
+                tableWrapper.style.cursor = 'grab';
+            });
+
+            tableWrapper.addEventListener('mouseup', () => {
+                isDown = false;
+                tableWrapper.style.cursor = 'grab';
+            });
+
+            tableWrapper.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - tableWrapper.offsetLeft;
+                const walk = (x - startX) * 2; // Scroll speed
+                tableWrapper.scrollLeft = scrollLeft - walk;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Emergency Responder - EHS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+
+        .logo i {
+            font-size: 40px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 40px;
+        }
+
+        .role-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ff6b35;
+            font-size: 18px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .toggle-password:hover {
+            color: #ff6b35;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .alert.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .back-link a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-link a:hover {
+            color: #ff6b35;
+        }
+
+        .emergency-info {
+            background: #fff3e0;
+            border-left: 4px solid #ff6b35;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .emergency-info strong {
+            color: #ff6b35;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .login-container {
+                padding: 30px 20px;
+                border-radius: 16px;
+            }
+
+            .logo {
+                width: 70px;
+                height: 70px;
+                border-radius: 16px;
+                margin-bottom: 16px;
+            }
+
+            .logo i {
+                font-size: 35px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+                margin-bottom: 30px;
+            }
+
+            .role-badge {
+                font-size: 12px;
+                padding: 5px 14px;
+                margin-bottom: 16px;
+            }
+
+            .emergency-info {
+                font-size: 12px;
+                padding: 12px;
+                margin-bottom: 20px;
+            }
+
+            label {
+                font-size: 13px;
+            }
+
+            input {
+                padding: 13px 13px 13px 42px;
+                font-size: 14px;
+            }
+
+            .input-group i {
+                font-size: 16px;
+                left: 13px;
+            }
+
+            .btn-login {
+                padding: 14px;
+                font-size: 15px;
+                margin-top: 20px;
+            }
+
+            .alert {
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+
+            .back-link {
+                margin-top: 20px;
+            }
+
+            .back-link a {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .login-container {
+                padding: 25px 16px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .logo {
+                width: 65px;
+                height: 65px;
+            }
+
+            .logo i {
+                font-size: 32px;
+            }
+
+            input {
+                padding: 12px 12px 12px 40px;
+                font-size: 13px;
+            }
+
+            .btn-login {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+
+        @media (min-width: 481px) and (max-width: 768px) {
+            .login-container {
+                max-width: 500px;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .login-container {
+                max-width: 450px;
+            }
+        }
+
+        @media (max-height: 700px) and (max-width: 480px) {
+            body {
+                padding: 15px 10px;
+            }
+
+            .login-container {
+                padding: 25px 20px;
+            }
+
+            .logo {
+                width: 65px;
+                height: 65px;
+                margin-bottom: 12px;
+            }
+
+            h1 {
+                font-size: 20px;
+                margin-bottom: 8px;
+            }
+
+            .subtitle {
+                font-size: 12px;
+                margin-bottom: 20px;
+            }
+
+            .emergency-info {
+                padding: 10px;
+                margin-bottom: 16px;
+            }
+
+            .form-group {
+                margin-bottom: 18px;
+            }
+
+            .btn-login {
+                margin-top: 16px;
+            }
+
+            .back-link {
+                margin-top: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-truck-medical"></i>
+            </div>
+            <h1>Emergency Responder</h1>
+            <p class="subtitle">Portal Khusus Tim Darurat</p>
+            <span class="role-badge"><i class="fas fa-shield-alt"></i> Emergency Access</span>
+        </div>
+
+        <div class="emergency-info">
+            <strong><i class="fas fa-info-circle"></i> Akses Terbatas</strong>
+            Portal ini hanya untuk: Polisi, Pemadam Kebakaran, Tim Medis, dan Layanan Darurat resmi.
+        </div>
+
+        <div id="alert" class="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="alertMessage"></span>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Resmi</label>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="emergency@layanan.go.id"
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-group" style="position: relative;">
+                    <i class="fas fa-lock"></i>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="••••••••"
+                        required
+                        autocomplete="new-password"
+                    >
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login" id="btnLogin">
+                <span id="btnText">
+                    <i class="fas fa-sign-in-alt"></i> Masuk ke Dashboard
+                </span>
+                <div class="spinner" id="spinner"></div>
+            </button>
+        </form>
+
+        <div class="back-link">
+            <a href="dashboard.html">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </a>
+        </div>
+    </div>
+
+    <script>
+
+        const loginForm = document.getElementById('loginForm');
+        const btnLogin = document.getElementById('btnLogin');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+        const alert = document.getElementById('alert');
+        const alertMessage = document.getElementById('alertMessage');
+
+        function showAlert(message, type = 'error') {
+            alertMessage.textContent = message;
+            alert.className = `alert ${type} show`;
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        const supabaseUrl = 'https://fvayuhanwcwinkvvvisk.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2YXl1aGFud2N3aW5rdnZ2aXNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MDk1NTYsImV4cCI6MjA3NTQ4NTU1Nn0.AP0ZYsrUQ1ACD7fmX1wTM88_zzMtvyKXmgc9wCVvRrM';
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            btnLogin.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+
+            try {
+
+                const validEmails = [
+                    'emergency@layanan.go.id',
+                    'polisi@emergency.go.id',
+                    'damkar@emergency.go.id',
+                    'medis@emergency.go.id'
+                ];
+
+                if (validEmails.includes(email.toLowerCase()) && password.length >= 6) {
+
+                    const token = btoa(email + ':' + Date.now());
+                    const user = {
+                        email: email,
+                        role: 'emergency',
+                        name: email.split('@')[0].toUpperCase(),
+                        loginTime: new Date().toISOString()
+                    };
+
+                    sessionStorage.setItem('emergency_token', token);
+                    sessionStorage.setItem('emergency_user', JSON.stringify(user));
+
+                    showAlert('Login berhasil! Mengalihkan...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'emergency-dashboard.html';
+                    }, 1000);
+                } else {
+                    throw new Error('Email atau password salah');
+                }
+            } catch (error) {
+                showAlert(error.message || 'Terjadi kesalahan saat login');
+            } finally {
+                btnLogin.disabled = false;
+                btnText.style.display = 'flex';
+                spinner.style.display = 'none';
+            }
+        });
+
+        const token = sessionStorage.getItem('emergency_token');
+        if (token) {
+            window.location.href = 'emergency-dashboard.html';
+        }
+    </script>
+
+    <script src="kiosk-mode.js"></script>
+</body>
+</html>

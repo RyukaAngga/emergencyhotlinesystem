@@ -1,0 +1,547 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Nomor Darurat - Emergency Hotline System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            color: #1e293b;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .emergency-main {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100vw;
+        }
+
+        .app-header {
+            width: 100%;
+            background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(21, 101, 192, 0.3);
+            z-index: 20;
+        }
+
+        .app-brand-container {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .app-logo {
+            height: 65px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .app-title {
+            margin-left: 14px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 0;
+            overflow-y: auto;
+            justify-content: center;
+            min-height: calc(100vh - 120px);
+        }
+
+        .header-section {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0 20px;
+            margin-bottom: 30px;
+        }
+
+        .title-section {
+            flex: 1;
+            text-align: center;
+        }
+
+        .center-content {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: #64748b;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .emergency-list {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 0 20px;
+            margin-top: 20px;
+        }
+
+        .emergency-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 22px 26px;
+            box-shadow: 0 4px 20px rgba(25, 118, 210, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .emergency-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #1976D2 0%, #1565C0 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .emergency-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(25, 118, 210, 0.25);
+        }
+
+        .emergency-card:hover::before {
+            opacity: 1;
+        }
+
+        .emergency-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 0;
+            flex-shrink: 0;
+        }
+
+        .icon-police {
+            background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+        }
+
+        .icon-ambulance {
+            background: linear-gradient(135deg, #F44336 0%, #E53935 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+        }
+
+        .icon-fire {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+
+        .icon-rescue {
+            background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .icon-disaster {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+        }
+
+        .emergency-details {
+            flex: 1;
+        }
+
+        .emergency-name {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #546e7a;
+            margin-bottom: 6px;
+            letter-spacing: 0.02em;
+        }
+
+        .emergency-number {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1976D2;
+            letter-spacing: 2px;
+        }
+
+        .back-button {
+            padding: 8px 14px;
+            background: #fff;
+            color: #475569;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .back-button:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .footer {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            text-align: center;
+            color: #1976D2;
+            font-size: 0.9rem;
+            box-shadow: 0 -2px 12px rgba(66, 165, 245, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        @media screen and (max-width: 768px) {
+            .app-logo {
+                height: 58px;
+            }
+
+            .app-brand-container {
+                padding: 7px 14px;
+                border-radius: 11px;
+            }
+
+            .app-title {
+                font-size: 1.2rem;
+                margin-left: 12px;
+            }
+
+            .header-section {
+                padding: 0 15px;
+                margin-bottom: 25px;
+            }
+
+            .emergency-list {
+                padding: 0 15px;
+                margin-top: 15px;
+            }
+
+            .center-content {
+                margin-bottom: 30px;
+            }
+
+            .back-button {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                gap: 4px;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .page-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .emergency-card {
+                padding: 18px 20px;
+            }
+
+            .emergency-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
+                margin-right: 15px;
+            }
+
+            .emergency-name {
+                font-size: 1.1rem;
+            }
+
+            .emergency-number {
+                font-size: 1.5rem;
+            }
+
+            .call-icon {
+                font-size: 1.7rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .app-logo {
+                height: 52px;
+            }
+
+            .app-brand-container {
+                padding: 6px 12px;
+                border-radius: 10px;
+            }
+
+            .app-title {
+                font-size: 1.05rem;
+                margin-left: 10px;
+            }
+
+            .header-section {
+                padding: 0 10px;
+                margin-bottom: 20px;
+            }
+
+            .emergency-list {
+                padding: 0 10px;
+                margin-top: 15px;
+            }
+
+            .center-content {
+                margin-bottom: 25px;
+            }
+
+            .back-button {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+                gap: 3px;
+            }
+
+            .page-title {
+                font-size: 1.8rem;
+            }
+
+            .page-subtitle {
+                font-size: 1rem;
+            }
+
+            .emergency-card {
+                padding: 15px 18px;
+            }
+
+            .emergency-icon {
+                width: 45px;
+                height: 45px;
+                font-size: 1.3rem;
+                margin-right: 12px;
+            }
+
+            .emergency-name {
+                font-size: 1rem;
+            }
+
+            .emergency-number {
+                font-size: 1.3rem;
+            }
+
+            .call-icon {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            .app-header {
+                padding: 10px 15px;
+            }
+
+            .app-logo {
+                height: 45px;
+            }
+
+            .header-section {
+                padding: 0 15px;
+                margin-bottom: 15px;
+            }
+
+            .emergency-list {
+                padding: 0 15px;
+                margin-top: 10px;
+            }
+
+            .center-content {
+                margin-bottom: 20px;
+            }
+
+            .back-button {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                margin-bottom: 5px;
+            }
+
+            .page-subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 20px;
+            }
+
+            .emergency-card {
+                padding: 12px 15px;
+            }
+
+            .emergency-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+
+            .content-area {
+                padding: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="emergency-main">
+        <div class="app-header">
+            <div class="app-brand-container">
+                <img src="./img/logo.png" alt="EHS Logo" class="app-logo">
+                <div class="app-title">Emergency Hotline System</div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="header-section">
+                <a href="dashboard.html" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Kembali</span>
+                </a>
+                <div class="title-section">
+                    <!-- Title akan dipindahkan ke tengah -->
+                </div>
+            </div>
+
+            <div class="center-content">
+                <h1 class="page-title">Nomor Darurat</h1>
+                <p class="page-subtitle">Pilih layanan darurat yang Anda butuhkan</p>
+            </div>
+
+            <div class="emergency-list">
+                <a href="tel:110" class="emergency-card">
+                    <div class="emergency-icon icon-police">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="emergency-details">
+                        <div class="emergency-name">Polisi</div>
+                        <div class="emergency-number">110</div>
+                    </div>
+                </a>
+
+                <a href="tel:118" class="emergency-card">
+                    <div class="emergency-icon icon-ambulance">
+                        <i class="fas fa-ambulance"></i>
+                    </div>
+                    <div class="emergency-details">
+                        <div class="emergency-name">Ambulans</div>
+                        <div class="emergency-number">118</div>
+                    </div>
+                </a>
+
+                <a href="tel:113" class="emergency-card">
+                    <div class="emergency-icon icon-fire">
+                        <i class="fas fa-fire-extinguisher"></i>
+                    </div>
+                    <div class="emergency-details">
+                        <div class="emergency-name">Pemadam Kebakaran</div>
+                        <div class="emergency-number">113</div>
+                    </div>
+                </a>
+
+                <a href="tel:115" class="emergency-card">
+                    <div class="emergency-icon icon-rescue">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="emergency-details">
+                        <div class="emergency-name">SAR (Pencarian & Penyelamatan)</div>
+                        <div class="emergency-number">115</div>
+                    </div>
+                </a>
+
+                <a href="tel:112" class="emergency-card">
+                    <div class="emergency-icon icon-disaster">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="emergency-details">
+                        <div class="emergency-name">Nomor Darurat Nasional</div>
+                        <div class="emergency-number">112</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 Emergency Hotline System. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        let timeout;
+        function resetTimer() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                window.location.href = 'scan.html';
+            }, 30000);
+        }
+        window.onload = resetTimer;
+        window.onmousemove = resetTimer;
+        window.onmousedown = resetTimer;
+        window.ontouchstart = resetTimer;
+        window.onkeydown = resetTimer;
+
+        // Disable click pada emergency cards - hanya untuk informasi saja
+        document.querySelectorAll('.emergency-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+            });
+        });
+    </script>
+</body>
+</html>
