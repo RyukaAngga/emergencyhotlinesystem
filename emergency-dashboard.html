@@ -868,10 +868,120 @@
                 font-size: 20px;
             }
         }
+
+        /* Audio Permission Overlay */
+        .audio-permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .audio-permission-overlay.hidden {
+            display: none;
+        }
+
+        .audio-permission-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .audio-permission-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .audio-permission-content h2 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .audio-permission-content p {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .btn-enable-audio {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 30px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-enable-audio:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-enable-audio:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
     
+    <!-- Audio Permission Overlay -->
+    <div class="audio-permission-overlay" id="audioPermissionOverlay">
+        <div class="audio-permission-content">
+            <div class="audio-permission-icon">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <h2>🔔 Aktifkan Notifikasi Suara</h2>
+            <p>Dashboard ini memerlukan izin untuk memutar alarm saat ada kasus darurat baru. Klik tombol di bawah untuk mengaktifkan suara notifikasi.</p>
+            <button class="btn-enable-audio" id="btnEnableAudio">
+                <i class="fas fa-bell"></i> Aktifkan Suara Alarm
+            </button>
+        </div>
+    </div>
+
     <div class="popup-overlay" id="popupOverlay">
         <div class="popup-content">
             <div class="popup-icon" id="popupIcon"></div>
@@ -1362,13 +1472,65 @@
             loadCases();
         }
 
-        const emergencyAlarmAudio = new Audio('./alarm/war siren sound  war  siren  soundeffects.mp3');
+        const emergencyAlarmAudio = new Audio('./alarm/emergency-alarm.mp3');
         emergencyAlarmAudio.volume = 1.0; // Maximum volume (100%)
         let alarmPlayCount = 0;
         const maxAlarmRepeats = 3;
         const btnStopAlarm = document.getElementById('btnStopAlarm');
+        
+        // Track user interaction for audio autoplay policy
+        let userHasInteracted = false;
+        let pendingAlarm = false;
+        const audioPermissionOverlay = document.getElementById('audioPermissionOverlay');
+        const btnEnableAudio = document.getElementById('btnEnableAudio');
+
+        // Check if user already enabled audio (saved in sessionStorage)
+        if (sessionStorage.getItem('audioEnabled') === 'true') {
+            userHasInteracted = true;
+            audioPermissionOverlay.classList.add('hidden');
+        }
+
+        // Enable audio when user clicks the button
+        btnEnableAudio.addEventListener('click', () => {
+            userHasInteracted = true;
+            sessionStorage.setItem('audioEnabled', 'true');
+            audioPermissionOverlay.classList.add('hidden');
+            
+            // Play a short test sound to "unlock" audio
+            emergencyAlarmAudio.volume = 0.1;
+            emergencyAlarmAudio.play().then(() => {
+                emergencyAlarmAudio.pause();
+                emergencyAlarmAudio.currentTime = 0;
+                emergencyAlarmAudio.volume = 1.0;
+                console.log('✅ Audio enabled successfully');
+                
+                // If there was a pending alarm, play it now
+                if (pendingAlarm) {
+                    pendingAlarm = false;
+                    playEmergencyAlarm();
+                }
+            }).catch(err => {
+                console.error('Audio test failed:', err);
+            });
+        });
+
+        // Also enable audio on any click in the document
+        document.addEventListener('click', () => {
+            if (!userHasInteracted) {
+                userHasInteracted = true;
+                sessionStorage.setItem('audioEnabled', 'true');
+            }
+        }, { once: true });
 
         function playEmergencyAlarm() {
+            // If user hasn't interacted yet, show the overlay and queue the alarm
+            if (!userHasInteracted) {
+                console.log('⚠️ Audio not enabled yet, showing permission overlay');
+                pendingAlarm = true;
+                audioPermissionOverlay.classList.remove('hidden');
+                return;
+            }
+            
             alarmPlayCount = 0;
             btnStopAlarm.classList.add('active'); // Show stop button
             playAlarmOnce();
@@ -1379,12 +1541,19 @@
                 emergencyAlarmAudio.currentTime = 0; // Reset to beginning
                 emergencyAlarmAudio.play()
                     .then(() => {
-                        console.log(` Alarm playing (${alarmPlayCount + 1}/${maxAlarmRepeats})`);
+                        console.log(`🔊 Alarm playing (${alarmPlayCount + 1}/${maxAlarmRepeats})`);
                         alarmPlayCount++;
                     })
                     .catch(err => {
                         console.error('Error playing alarm:', err);
                         btnStopAlarm.classList.remove('active');
+                        
+                        // If autoplay blocked, show permission overlay
+                        if (err.name === 'NotAllowedError') {
+                            userHasInteracted = false;
+                            pendingAlarm = true;
+                            audioPermissionOverlay.classList.remove('hidden');
+                        }
                     });
             }
         }
