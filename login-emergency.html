@@ -489,49 +489,59 @@
             }, 5000);
         }
 
-        const supabaseUrl = 'https://fvayuhanwcwinkvvvisk.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2YXl1aGFud2N3aW5rdnZ2aXNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MDk1NTYsImV4cCI6MjA3NTQ4NTU1Nn0.AP0ZYsrUQ1ACD7fmX1wTM88_zzMtvyKXmgc9wCVvRrM';
+        // Server URL untuk API
+        const SERVER_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3003' 
+            : window.location.origin;
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showAlert('Email dan password harus diisi');
+                return;
+            }
 
             btnLogin.disabled = true;
             btnText.style.display = 'none';
             spinner.style.display = 'block';
 
             try {
+                // Panggil API login di server yang menggunakan Supabase Auth
+                const response = await fetch(`${SERVER_URL}/api/emergency-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
 
-                const validEmails = [
-                    'emergency@layanan.go.id',
-                    'polisi@emergency.go.id',
-                    'damkar@emergency.go.id',
-                    'medis@emergency.go.id'
-                ];
+                const data = await response.json();
 
-                if (validEmails.includes(email.toLowerCase()) && password.length >= 6) {
-
-                    const token = btoa(email + ':' + Date.now());
-                    const user = {
-                        email: email,
-                        role: 'emergency',
-                        name: email.split('@')[0].toUpperCase(),
-                        loginTime: new Date().toISOString()
-                    };
-
-                    sessionStorage.setItem('emergency_token', token);
-                    sessionStorage.setItem('emergency_user', JSON.stringify(user));
-
-                    showAlert('Login berhasil! Mengalihkan...', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'emergency-dashboard.html';
-                    }, 1000);
-                } else {
-                    throw new Error('Email atau password salah');
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Email atau password salah');
                 }
+
+                // Login berhasil - simpan token dan user data
+                sessionStorage.setItem('emergency_token', data.token);
+                sessionStorage.setItem('emergency_user', JSON.stringify({
+                    id: data.user.id,
+                    email: data.user.email,
+                    role: data.user.role,
+                    name: data.user.name.toUpperCase(),
+                    loginTime: new Date().toISOString()
+                }));
+
+                showAlert('Login berhasil! Mengalihkan...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'emergency-dashboard.html';
+                }, 1000);
+
             } catch (error) {
+                console.error('Login error:', error);
                 showAlert(error.message || 'Terjadi kesalahan saat login');
             } finally {
                 btnLogin.disabled = false;
