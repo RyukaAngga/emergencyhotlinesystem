@@ -821,10 +821,10 @@ function updateKioskControlButton() {
 }
 
 // ========================================
-// AGGRESSIVE FULLSCREEN RESTORE
+// INSTANT FULLSCREEN RESTORE (NO PROMPT)
 // ========================================
 let fullscreenRestoreAttempts = 0;
-const MAX_FULLSCREEN_ATTEMPTS = 10;
+const MAX_FULLSCREEN_ATTEMPTS = 20;
 
 function aggressiveFullscreenRestore() {
     if (!isKioskModeActive) return;
@@ -832,16 +832,16 @@ function aggressiveFullscreenRestore() {
     if (fullscreenRestoreAttempts >= MAX_FULLSCREEN_ATTEMPTS) return;
     
     fullscreenRestoreAttempts++;
-    console.log(`🔄 Attempting fullscreen restore (${fullscreenRestoreAttempts}/${MAX_FULLSCREEN_ATTEMPTS})...`);
+    console.log(`🔄 Fullscreen attempt ${fullscreenRestoreAttempts}/${MAX_FULLSCREEN_ATTEMPTS}...`);
     
     goFullscreen();
     
-    // Check again after delay
+    // Keep trying rapidly
     setTimeout(() => {
         if (isKioskModeActive && !isFullscreenActive()) {
             aggressiveFullscreenRestore();
         }
-    }, 1000);
+    }, 200);
 }
 
 // Auto-fullscreen on ANY user interaction when kiosk mode is active
@@ -849,118 +849,85 @@ function setupAggressiveAutoFullscreen() {
     const triggerFullscreen = (e) => {
         if (isKioskModeActive && !isFullscreenActive()) {
             console.log('👆 User interaction detected, restoring fullscreen...');
-            fullscreenRestoreAttempts = 0; // Reset counter
+            fullscreenRestoreAttempts = 0;
             goFullscreen();
         }
     };
     
     // Listen to ALL possible user interactions
-    ['click', 'touchstart', 'touchend', 'mousedown', 'keydown', 'keypress'].forEach(event => {
+    ['click', 'touchstart', 'touchend', 'mousedown', 'keydown', 'keypress', 'mousemove', 'scroll'].forEach(event => {
         document.addEventListener(event, triggerFullscreen, { passive: true, capture: true });
     });
 }
 
-// Show overlay prompt to restore fullscreen
-function showFullscreenRestorePrompt() {
-    if (document.getElementById('fullscreen-restore-prompt')) return;
+// Create invisible trigger that auto-clicks to force fullscreen
+function createInstantFullscreenTrigger() {
+    if (!isKioskModeActive) return;
+    if (isFullscreenActive()) return;
     
-    const prompt = document.createElement('div');
-    prompt.id = 'fullscreen-restore-prompt';
-    prompt.innerHTML = `
-        <style>
-            #fullscreen-restore-prompt {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.9);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                z-index: 999999;
-                color: white;
-                text-align: center;
-                cursor: pointer;
-                animation: fadeIn 0.3s ease;
-            }
-            
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-            
-            .restore-icon {
-                font-size: 80px;
-                margin-bottom: 20px;
-                animation: pulse 1.5s infinite;
-            }
-            
-            @keyframes pulse {
-                0%, 100% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.1); opacity: 0.8; }
-            }
-            
-            .restore-title {
-                font-size: 28px;
-                font-weight: 700;
-                margin-bottom: 12px;
-            }
-            
-            .restore-subtitle {
-                font-size: 18px;
-                opacity: 0.9;
-                margin-bottom: 30px;
-            }
-            
-            .restore-button {
-                background: linear-gradient(135deg, #3b82f6, #2563eb);
-                color: white;
-                border: none;
-                padding: 16px 40px;
-                border-radius: 30px;
-                font-size: 18px;
-                font-weight: 600;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                transition: all 0.3s;
-            }
-            
-            .restore-button:hover {
-                transform: scale(1.05);
-                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
-            }
-        </style>
-        <div class="restore-icon">🔒</div>
-        <div class="restore-title">Kiosk Mode Aktif</div>
-        <div class="restore-subtitle">Klik di mana saja untuk kembali ke mode layar penuh</div>
-        <button class="restore-button">
-            <i class="fas fa-expand"></i> Masuk Fullscreen
-        </button>
+    // Create invisible fullscreen trigger overlay
+    const trigger = document.createElement('div');
+    trigger.id = 'instant-fullscreen-trigger';
+    trigger.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: transparent;
+        z-index: 999999;
+        cursor: default;
     `;
     
-    const restoreFullscreen = () => {
+    // When user touches/clicks anywhere, enter fullscreen immediately
+    const enterFullscreenAndRemove = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         goFullscreen();
+        
+        // Remove trigger after fullscreen
         setTimeout(() => {
-            if (isFullscreenActive()) {
-                prompt.remove();
-            }
-        }, 500);
+            trigger.remove();
+        }, 100);
     };
     
-    prompt.addEventListener('click', restoreFullscreen);
-    document.body.appendChild(prompt);
+    trigger.addEventListener('click', enterFullscreenAndRemove, { once: true });
+    trigger.addEventListener('touchstart', enterFullscreenAndRemove, { once: true, passive: false });
+    trigger.addEventListener('mousedown', enterFullscreenAndRemove, { once: true });
     
-    // Auto-remove when fullscreen is active
-    const checkFullscreen = setInterval(() => {
-        if (isFullscreenActive()) {
-            prompt.remove();
-            clearInterval(checkFullscreen);
+    document.body.appendChild(trigger);
+    
+    // Simulate click/touch to trigger fullscreen immediately
+    // This works because the page just loaded and user "interaction" from previous page carries over
+    setTimeout(() => {
+        if (!isFullscreenActive()) {
+            // Try to programmatically trigger
+            const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+            });
+            trigger.dispatchEvent(clickEvent);
         }
-    }, 500);
+    }, 50);
+    
+    // If still not fullscreen, the overlay will catch the first real interaction
+    // Auto-remove after 5 seconds if fullscreen is achieved
+    const checkAndRemove = setInterval(() => {
+        if (isFullscreenActive() || !isKioskModeActive) {
+            trigger.remove();
+            clearInterval(checkAndRemove);
+        }
+    }, 100);
+    
+    // Force remove after 10 seconds anyway
+    setTimeout(() => {
+        if (trigger.parentNode) {
+            trigger.remove();
+        }
+        clearInterval(checkAndRemove);
+    }, 10000);
 }
 
 // ========================================
@@ -972,7 +939,7 @@ function initSuperKioskMode() {
     // Setup event listeners
     setupKioskEventListeners();
     setupAutoFullscreen();
-    setupAggressiveAutoFullscreen(); // NEW: More aggressive auto-fullscreen
+    setupAggressiveAutoFullscreen();
     setupStorageSync();
     
     // Check if kiosk mode was active (from previous page/session)
@@ -986,32 +953,28 @@ function initSuperKioskMode() {
         console.log('🔒 Super Kiosk Mode restored from previous session');
         console.log('📍 Current page:', window.location.pathname);
         
-        // Try fullscreen immediately
+        // INSTANT fullscreen attempts - no delay, no prompt
         goFullscreen();
         
-        // Try again after short delay
-        setTimeout(() => {
-            if (!isFullscreenActive()) {
-                console.log('⚠️ Fullscreen not active, trying again...');
-                goFullscreen();
-            }
-        }, 300);
+        setTimeout(() => goFullscreen(), 50);
+        setTimeout(() => goFullscreen(), 100);
+        setTimeout(() => goFullscreen(), 200);
+        setTimeout(() => goFullscreen(), 300);
+        setTimeout(() => goFullscreen(), 500);
         
-        // Try again after longer delay
+        // Create invisible trigger that catches first interaction
         setTimeout(() => {
             if (!isFullscreenActive()) {
-                console.log('⚠️ Fullscreen still not active, starting aggressive restore...');
+                createInstantFullscreenTrigger();
+            }
+        }, 100);
+        
+        // Keep trying aggressively
+        setTimeout(() => {
+            if (!isFullscreenActive()) {
                 aggressiveFullscreenRestore();
             }
-        }, 1000);
-        
-        // Show prompt if still not fullscreen after 2 seconds
-        setTimeout(() => {
-            if (isKioskModeActive && !isFullscreenActive()) {
-                console.log('⚠️ Showing fullscreen restore prompt...');
-                showFullscreenRestorePrompt();
-            }
-        }, 2000);
+        }, 600);
     }
     
     // Create control button on dashboard
