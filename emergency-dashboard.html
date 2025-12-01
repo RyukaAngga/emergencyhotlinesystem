@@ -1259,7 +1259,10 @@
                 const scanTime = caseData.timestamp;
                 const location = caseData.location || { latitude: -6.9559, longitude: 107.6411 };
                 const coordinates = `${location.latitude}, ${location.longitude}`;
-                const mapLink = 'https://maps.app.goo.gl/rnx3LPv4myKpDTfAA';
+                // Generate dynamic Google Maps URL from coordinates
+                const mapLink = location.googleMaps || `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                const locationName = location.name || 'Lokasi GPS';
+                const locationAddress = location.address || 'Alamat tidak tersedia';
                 
                 return `
                 <div class="case-item">
@@ -1329,7 +1332,13 @@
                                 <span class="detail-label">
                                     <i class="fas fa-map-marker-alt"></i> Lokasi:
                                 </span>
-                                <span class="detail-value">SMK MARHAS Margahayu</span>
+                                <span class="detail-value">${locationName}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-home"></i> Alamat:
+                                </span>
+                                <span class="detail-value" style="font-size: 12px;">${locationAddress}</span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">
@@ -1338,7 +1347,7 @@
                                 <span class="detail-value">${coordinates}</span>
                             </div>
                             <div class="case-actions">
-                                <a href="${mapLink}" target="_blank" class="btn-action primary">
+                                <a href="${mapLink}" target="_blank" class="btn-action primary" style="text-decoration: none;">
                                     <i class="fas fa-map-marked-alt"></i> Buka Google Maps
                                 </a>
                                 ${caseData.status === 'active' ? `
@@ -1757,5 +1766,6 @@
 
         console.log(' Emergency Dashboard with Chat initialized');
     </script>
+    <script src="kiosk-mode.js"></script>
 </body>
 </html>

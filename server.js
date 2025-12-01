@@ -435,6 +435,17 @@ app.post('/send-emergency', async (req, res) => {
         const typeName = typeNames[accidentType] || 'LAINNYA';
         
         console.log('🎯 Processing emergency - Raw type:', accidentType, '| Display:', typeName);
+        console.log('📍 Location data:', location);
+
+        // Get location info from request or fallback to env
+        const locationName = location?.name || process.env.LOCATION_NAME || 'Lokasi Tidak Diketahui';
+        const locationAddress = location?.address || process.env.LOCATION_ADDRESS || 'Alamat tidak tersedia';
+        const locationCoords = (location?.latitude && location?.longitude) 
+            ? `${location.latitude}, ${location.longitude}` 
+            : 'Koordinat tidak tersedia';
+        const googleMapsLink = (location?.latitude && location?.longitude)
+            ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
+            : location?.googleMaps || '';
 
         // Format pesan untuk Telegram dengan mention
         const emergencyMessage = `
@@ -449,13 +460,14 @@ ${icon} <b>Tipe Emergency:</b> ${typeName}
 👤 <b>Pengirim:</b> ${userName || 'Anonymous'}
 ${scanId ? `🆔 <b>Scan ID:</b> ${scanId}` : ''}
 🕐 <b>Waktu:</b> ${new Date().toLocaleString('id-ID')}
-📍 <b>Lokasi:</b> ${process.env.LOCATION_NAME || 'SMK MARHAS Margahayu'}
 
 ━━━━━━━━━━━━━━━━━━
-�️ <b>Alamat:</b>
-${process.env.LOCATION_ADDRESS || 'Jl. Raya Margahayu No.186, Bandung'}
-
-${location ? `� <b>Koordinat:</b> ${location.latitude}, ${location.longitude}` : ''}
+📍 <b>LOKASI REALTIME:</b>
+🏢 <b>Nama:</b> ${locationName}
+🗺️ <b>Alamat:</b> ${locationAddress}
+📌 <b>Koordinat:</b> ${locationCoords}
+${location?.accuracy ? `📡 <b>Akurasi:</b> ±${Math.round(location.accuracy)}m` : ''}
+${googleMapsLink ? `🔗 <a href="${googleMapsLink}">Buka di Google Maps</a>` : ''}
 
 ━━━━━━━━━━━━━━━━━━
 ⚠️ <b>PERHATIAN!</b>
@@ -472,6 +484,19 @@ Segera buka Emergency Dashboard untuk melihat detail dan menangani kasus ini!
             await sendTelegramLocation(location.latitude, location.longitude);
         }
 
+        // Normalize location data with Google Maps URL
+        const normalizedLocation = {
+            latitude: location?.latitude || null,
+            longitude: location?.longitude || null,
+            name: location?.name || 'Lokasi GPS',
+            address: location?.address || 'Alamat tidak tersedia',
+            accuracy: location?.accuracy || null,
+            googleMaps: location?.googleMaps || 
+                (location?.latitude && location?.longitude 
+                    ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}` 
+                    : null)
+        };
+
         // Simpan alert dengan flag emergency button
         const alert = {
             id: Date.now(),
@@ -479,7 +504,7 @@ Segera buka Emergency Dashboard untuk melihat detail dan menangani kasus ini!
             message,
             userName: userName || 'Anonymous',
             userPhoto,
-            location,
+            location: normalizedLocation,
             timestamp: new Date().toISOString(),
             telegramSent: telegramResult.success,
             emergencyButtonPressed: emergencyButtonPressed === true,

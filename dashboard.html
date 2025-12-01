@@ -1846,11 +1846,16 @@
         .service-chat-messages {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 16px;
+            padding-bottom: 100px; /* Space for input */
             display: flex;
             flex-direction: column;
             gap: 12px;
             min-height: 0;
+            max-height: calc(100vh - 200px);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
         }
 
         .service-message {
@@ -1938,9 +1943,8 @@
             padding: 12px 16px;
             background: white;
             border-top: 1px solid #e5e7eb;
-            position: sticky;
-            bottom: 0;
-            z-index: 999;
+            position: relative;
+            z-index: 10;
             display: block;
             width: 100%;
             box-sizing: border-box;
@@ -3929,18 +3933,243 @@
             { name: 'Petugas Backup 2', phone: '+6288647356283' }
         ];
 
-        const EMERGENCY_LOCATION = {
-            name: 'SMK MARHAS Margahayu',
-            address: 'Jl. Raya Margahayu No.186, Margahayu, Kec. Margahayu, Kabupaten Bandung, Jawa Barat',
-            latitude: -6.9759367,
-            longitude: 107.5704834,
-            googleMaps: 'https://maps.app.goo.gl/iUSHhmnRQdGKwj8x8'
+        // ========================================
+        // REALTIME LOCATION SYSTEM
+        // ========================================
+        let EMERGENCY_LOCATION = {
+            name: 'Lokasi Belum Terdeteksi',
+            address: 'Menunggu izin lokasi...',
+            latitude: null,
+            longitude: null,
+            googleMaps: null,
+            accuracy: null,
+            timestamp: null
         };
 
         const MESSAGE_TEMPLATE = {
             title: ' NOTIFIKASI DARURAT ',
-            footer: 'Pesan otomatis dari Emergency Hotline System - Kiosk SMK MARHAS Margahayu'
+            footer: 'Pesan otomatis dari Emergency Hotline System'
         };
+
+        // Clear old location cache on page load
+        localStorage.removeItem('user_location');
+
+        // Request and update location
+        async function initializeLocation() {
+            console.log('📍 Initializing location system...');
+            
+            // Clear any cached location first
+            localStorage.removeItem('user_location');
+            
+            // Check if HTTPS (GPS requires HTTPS for accuracy)
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                console.warn('⚠️ GPS requires HTTPS for accurate location!');
+            }
+            
+            if (!navigator.geolocation) {
+                console.warn('⚠️ Geolocation not supported');
+                showLocationError('Browser tidak mendukung geolocation');
+                return false;
+            }
+
+            return new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude, accuracy } = position.coords;
+                        console.log(`📍 Location obtained: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
+                        
+                        // Check if accuracy is too low (> 1000m means IP-based, not GPS)
+                        if (accuracy > 1000) {
+                            console.warn(`⚠️ LOW ACCURACY: ${Math.round(accuracy)}m - Kemungkinan menggunakan IP location, bukan GPS`);
+                            console.warn('⚠️ Pastikan:');
+                            console.warn('   1. Izin lokasi "Precise/Accurate" diaktifkan di browser');
+                            console.warn('   2. GPS/Location Services aktif di device');
+                            console.warn('   3. Akses via HTTPS untuk akurasi GPS');
+                            
+                            if (typeof showToast === 'function') {
+                                showToast('⚠️ Lokasi Tidak Akurat', 
+                                    `Akurasi ${Math.round(accuracy/1000)}km. Aktifkan GPS dan izin "Lokasi Presisi" untuk hasil akurat.`, 
+                                    'warning', 8000);
+                            }
+                        }
+                        
+                        EMERGENCY_LOCATION.latitude = latitude;
+                        EMERGENCY_LOCATION.longitude = longitude;
+                        EMERGENCY_LOCATION.accuracy = accuracy;
+                        EMERGENCY_LOCATION.timestamp = new Date().toISOString();
+                        EMERGENCY_LOCATION.googleMaps = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                        
+                        // Get address from coordinates using reverse geocoding
+                        await reverseGeocode(latitude, longitude);
+                        
+                        console.log('📍 Final location:', JSON.stringify(EMERGENCY_LOCATION));
+                        
+                        // Save to localStorage for persistence
+                        localStorage.setItem('user_location', JSON.stringify(EMERGENCY_LOCATION));
+                        
+                        updateLocationIndicator(true, accuracy);
+                        resolve(true);
+                    },
+                    (error) => {
+                        console.error('❌ Location error:', error.message);
+                        handleLocationError(error);
+                        resolve(false);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 15000,
+                        maximumAge: 0 // ALWAYS get fresh location, no cache
+                    }
+                );
+            });
+        }
+
+        // Reverse geocode to get address
+        async function reverseGeocode(lat, lng) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`, {
+                    headers: { 'User-Agent': 'EmergencyHotlineSystem/1.0' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    EMERGENCY_LOCATION.address = data.display_name || `${lat}, ${lng}`;
+                    EMERGENCY_LOCATION.name = data.address?.building || 
+                                              data.address?.amenity || 
+                                              data.address?.road || 
+                                              data.address?.suburb || 
+                                              'Lokasi Saat Ini';
+                    console.log('📍 Address resolved:', EMERGENCY_LOCATION.address);
+                }
+            } catch (e) {
+                console.warn('⚠️ Reverse geocode failed:', e.message);
+                EMERGENCY_LOCATION.address = `Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                EMERGENCY_LOCATION.name = 'Lokasi GPS';
+            }
+        }
+
+        // Handle location errors
+        function handleLocationError(error) {
+            let message = 'Gagal mendapatkan lokasi';
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message = 'Izin lokasi ditolak. Silakan aktifkan di pengaturan browser.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = 'Lokasi tidak tersedia.';
+                    break;
+                case error.TIMEOUT:
+                    message = 'Waktu permintaan lokasi habis.';
+                    break;
+            }
+            showLocationError(message);
+            updateLocationIndicator(false);
+        }
+
+        // Show location error toast
+        function showLocationError(message) {
+            if (typeof showToast === 'function') {
+                showToast('📍 Lokasi', message, 'warning', 5000);
+            }
+        }
+
+        // Update location indicator in UI
+        function updateLocationIndicator(success, accuracy = null) {
+            const indicator = document.getElementById('locationIndicator');
+            if (indicator) {
+                if (success) {
+                    // Show warning if accuracy is low
+                    const isLowAccuracy = accuracy && accuracy > 1000;
+                    const accuracyText = accuracy ? ` (±${accuracy > 1000 ? Math.round(accuracy/1000) + 'km' : Math.round(accuracy) + 'm'})` : '';
+                    
+                    indicator.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${EMERGENCY_LOCATION.name}${accuracyText}`;
+                    indicator.style.color = isLowAccuracy ? '#f59e0b' : '#059669'; // Orange if low accuracy
+                    indicator.title = isLowAccuracy 
+                        ? `⚠️ Akurasi rendah! ${EMERGENCY_LOCATION.address}` 
+                        : EMERGENCY_LOCATION.address;
+                } else {
+                    indicator.innerHTML = '<i class="fas fa-map-marker-alt"></i> Lokasi tidak tersedia';
+                    indicator.style.color = '#dc2626';
+                }
+            }
+        }
+
+        // Watch location changes (real-time tracking)
+        let locationWatchId = null;
+        function startLocationWatch() {
+            if (navigator.geolocation && !locationWatchId) {
+                locationWatchId = navigator.geolocation.watchPosition(
+                    async (position) => {
+                        const { latitude, longitude, accuracy } = position.coords;
+                        console.log(`📍 Location updated: ${latitude}, ${longitude}`);
+                        
+                        EMERGENCY_LOCATION.latitude = latitude;
+                        EMERGENCY_LOCATION.longitude = longitude;
+                        EMERGENCY_LOCATION.accuracy = accuracy;
+                        EMERGENCY_LOCATION.timestamp = new Date().toISOString();
+                        EMERGENCY_LOCATION.googleMaps = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                        await reverseGeocode(latitude, longitude);
+                        localStorage.setItem('user_location', JSON.stringify(EMERGENCY_LOCATION));
+                        updateLocationIndicator(true);
+                    },
+                    (error) => {
+                        console.warn('📍 Watch position error:', error.message);
+                    },
+                    { 
+                        enableHighAccuracy: true, 
+                        maximumAge: 0, // No cache
+                        timeout: 10000
+                    }
+                );
+            }
+        }
+
+        // Get location for emergency (ALWAYS get fresh location)
+        async function getLocationForEmergency() {
+            console.log('🚨 Getting fresh location for emergency...');
+            
+            // ALWAYS request fresh location for emergency
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    console.warn('⚠️ Geolocation not supported, using cached');
+                    resolve(EMERGENCY_LOCATION);
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude, accuracy } = position.coords;
+                        console.log(`🚨 Fresh location: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
+                        
+                        EMERGENCY_LOCATION.latitude = latitude;
+                        EMERGENCY_LOCATION.longitude = longitude;
+                        EMERGENCY_LOCATION.accuracy = accuracy;
+                        EMERGENCY_LOCATION.timestamp = new Date().toISOString();
+                        EMERGENCY_LOCATION.googleMaps = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                        
+                        await reverseGeocode(latitude, longitude);
+                        
+                        console.log('🚨 Emergency location ready:', JSON.stringify(EMERGENCY_LOCATION));
+                        resolve(EMERGENCY_LOCATION);
+                    },
+                    (error) => {
+                        console.error('❌ Fresh location failed, using cached:', error.message);
+                        // Fallback to cached location
+                        if (EMERGENCY_LOCATION.latitude && EMERGENCY_LOCATION.longitude) {
+                            resolve(EMERGENCY_LOCATION);
+                        } else {
+                            // Last resort - use whatever we have
+                            resolve(EMERGENCY_LOCATION);
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0 // Force fresh, no cache
+                    }
+                );
+            });
+        }
 
         const AUTO_REDIRECT_SECONDS = 900;
 
@@ -4367,8 +4596,10 @@
         }
 
         async function proceedWithEmergencyAlert(accidentType = 'other') {
-
-            showLoadingAlert('Mengirim notifikasi emergency ke Telegram...');
+            showLoadingAlert('Mendapatkan lokasi dan mengirim notifikasi...');
+            
+            // Get fresh location before sending emergency
+            const location = await getLocationForEmergency();
 
             try {
 
@@ -4414,8 +4645,12 @@
                         scanPhoto: userPhoto,
                         bodyTemperature: bodyTemperature,
                         location: {
-                            latitude: EMERGENCY_LOCATION.latitude,
-                            longitude: EMERGENCY_LOCATION.longitude
+                            latitude: location.latitude || EMERGENCY_LOCATION.latitude,
+                            longitude: location.longitude || EMERGENCY_LOCATION.longitude,
+                            address: location.address || 'Alamat tidak tersedia',
+                            name: location.name || 'Lokasi tidak diketahui',
+                            accuracy: location.accuracy,
+                            googleMaps: location.googleMaps
                         }
                     })
                 });
@@ -4814,7 +5049,11 @@
                             </div>
                             <div class="info-row" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; font-size: 0.95rem; gap: 10px;">
                                 <span style="color: #1565C0; font-weight: 600; flex-shrink: 0;">Lokasi:</span>
-                                <span style="color: #1976D2; text-align: right;">SMK MARHAS Margahayu</span>
+                                <span style="color: #1976D2; text-align: right;">${EMERGENCY_LOCATION.name || 'Lokasi GPS'}</span>
+                            </div>
+                            <div class="info-row" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; font-size: 0.95rem; gap: 10px;">
+                                <span style="color: #1565C0; font-weight: 600; flex-shrink: 0;">Alamat:</span>
+                                <span style="color: #1976D2; text-align: right; font-size: 0.85rem;">${EMERGENCY_LOCATION.address || 'Alamat tidak tersedia'}</span>
                             </div>
                             <div class="info-row" style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 0.95rem; gap: 10px;">
                                 <span style="color: #1565C0; font-weight: 600; flex-shrink: 0;">Waktu:</span>
@@ -6067,13 +6306,17 @@ Sambil menunggu bantuan, terus pantau kondisi korban dan jaga tetap hangat.`
             }
         });
 
-        window.onload = () => {
+        window.onload = async () => {
             displayUserIdentity();
             startInactivityTimer(); // Mulai timer inactivity
             startCountdown();
             checkSystemStatus();
             startAutoRedirect(); // Mulai auto redirect timer
             initKioskMode(); // Initialize Kiosk Mode
+            
+            // Initialize realtime location
+            await initializeLocation();
+            startLocationWatch(); // Start watching location changes
 
             document.querySelectorAll('button, a, .menu-item').forEach(element => {
                 element.addEventListener('click', handleUserInteraction);
@@ -6107,243 +6350,7 @@ Sambil menunggu bantuan, terus pantau kondisi korban dan jaga tetap hangat.`
     </div>
 
     <script>
-
-        const SUPABASE_URL = 'https://fvayuhanwcwinkvvvisk.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2YXl1aGFud2N3aW5rdnZ2aXNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MDk1NTYsImV4cCI6MjA3NTQ4NTU1Nn0.AP0ZYsrUQ1ACD7fmX1wTM88_zzMtvyKXmgc9wCVvRrM';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let isKioskModeActive = false;
-        let kioskPasswordFromDB = null;
-        let kioskActionType = null; // 'enter' atau 'exit'
-
-        async function loadKioskPassword() {
-            try {
-
-                const { data, error } = await supabase
-                    .from('kiosk_settings')
-                    .select('password')
-                    .eq('id', 1)
-                    .single();
-
-                if (error) throw error;
-
-                if (data && data.password) {
-                    kioskPasswordFromDB = data.password;
-                } else {
-
-                    kioskPasswordFromDB = 'smkmarhas2025';
-                }
-            } catch (error) {
-
-                kioskPasswordFromDB = 'smkmarhas2025';
-            }
-        }
-
-        function initKioskMode() {
-
-            loadKioskPassword();
-
-            document.addEventListener('keydown', preventF11);
-
-            document.addEventListener('contextmenu', (e) => e.preventDefault());
-
-            document.addEventListener('fullscreenchange', handleFullscreenChange);
-            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
-            const enterKioskBtn = document.getElementById('enterKioskModeBtn');
-            if (enterKioskBtn) {
-                enterKioskBtn.addEventListener('click', () => {
-                    kioskActionType = 'enter';
-                    showPasswordModal('Masuk Kiosk Mode', 'Masukkan password untuk mengaktifkan mode layar penuh.');
-                });
-            }
-
-            const exitKioskBtn = document.getElementById('exitKioskModeBtn');
-            if (exitKioskBtn) {
-                exitKioskBtn.addEventListener('click', () => {
-                    kioskActionType = 'exit';
-                    showPasswordModal('Keluar dari Kiosk Mode', 'Masukkan password untuk keluar dari mode layar penuh.');
-                });
-            }
-
-            const kioskPasswordModal = document.getElementById('kioskPasswordModal');
-            const kioskPasswordInput = document.getElementById('kioskPasswordInput');
-            const kioskSubmitBtn = document.getElementById('kioskSubmitBtn');
-            const kioskCancelBtn = document.getElementById('kioskCancelBtn');
-            const kioskPasswordError = document.getElementById('kioskPasswordError');
-
-            kioskSubmitBtn.addEventListener('click', async () => {
-                const password = kioskPasswordInput.value;
-
-                if (await verifyKioskPassword(password)) {
-                    if (kioskActionType === 'enter') {
-                        enterKioskModeWithPassword();
-                    } else if (kioskActionType === 'exit') {
-                        exitKioskModeWithPassword();
-                    }
-                    hidePasswordModal();
-                    kioskPasswordInput.value = '';
-                    kioskPasswordError.classList.remove('show');
-                } else {
-
-                    kioskPasswordInput.classList.add('error');
-                    kioskPasswordError.classList.add('show');
-                    setTimeout(() => {
-                        kioskPasswordInput.classList.remove('error');
-                    }, 500);
-                    kioskPasswordInput.value = '';
-                    kioskPasswordInput.focus();
-                }
-            });
-
-            kioskCancelBtn.addEventListener('click', hidePasswordModal);
-
-            kioskPasswordInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    kioskSubmitBtn.click();
-                }
-            });
-
-            kioskPasswordModal.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    hidePasswordModal();
-                }
-            });
-        }
-
-        function enterFullscreen() {
-            const elem = document.documentElement;
-
-            const options = {
-                navigationUI: "hide" // Hide browser navigation UI
-            };
-
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen(options).then(() => {
-                    applyKioskStyles();
-                }).catch(err => {
-
-                    tryAlternativeFullscreen();
-                });
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-                applyKioskStyles();
-            } else if (elem.mozRequestFullScreen) {
-                elem.mozRequestFullScreen();
-                applyKioskStyles();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-                applyKioskStyles();
-            } else {
-
-                tryAlternativeFullscreen();
-            }
-        }
-
-        function tryAlternativeFullscreen() {
-
-            document.body.style.position = 'fixed';
-            document.body.style.top = '0';
-            document.body.style.left = '0';
-            document.body.style.width = '100vw';
-            document.body.style.height = '100vh';
-            document.body.style.overflow = 'hidden';
-            document.body.style.zIndex = '999999';
-            applyKioskStyles();
-        }
-
-        function applyKioskStyles() {
-
-            document.documentElement.classList.add('kiosk-fullscreen');
-            document.body.classList.add('kiosk-fullscreen');
-
-            document.documentElement.style.overflow = 'hidden';
-            document.body.style.overflow = 'hidden';
-
-            document.documentElement.style.width = '100vw';
-            document.documentElement.style.height = '100vh';
-
-            disableAdminMenuItems();
-        }
-
-        function removeKioskStyles() {
-            document.documentElement.classList.remove('kiosk-fullscreen');
-            document.body.classList.remove('kiosk-fullscreen');
-            document.documentElement.style.overflow = '';
-            document.body.style.overflow = '';
-            document.documentElement.style.width = '';
-            document.documentElement.style.height = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.left = '';
-            document.body.style.width = '';
-            document.body.style.height = '';
-            document.body.style.zIndex = '';
-
-            enableAdminMenuItems();
-        }
-
-        function exitFullscreen() {
-            removeKioskStyles();
-
-            if (document.exitFullscreen) {
-                document.exitFullscreen().catch(err => {
-                });
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-        }
-
-        function preventF11(e) {
-
-            if (e.key === 'F11' && isKioskModeActive) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-
-            if (e.key === 'Escape' && isKioskModeActive) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-        }
-
-        function handleFullscreenChange() {
-
-            const isFullscreen = document.fullscreenElement ||
-                document.webkitFullscreenElement ||
-                document.mozFullScreenElement ||
-                document.msFullscreenElement;
-
-            if (!isFullscreen && isKioskModeActive) {
-
-                showToast(
-                    ' Fullscreen Keluar',
-                    'Fullscreen mode keluar. Silakan klik "Masuk Kiosk Mode" untuk masuk kembali.',
-                    'info',
-                    5000
-                );
-
-                isKioskModeActive = false;
-                localStorage.removeItem('kiosk_mode_active');
-                removeKioskStyles();
-            }
-        }
-
-        async function verifyKioskPassword(inputPassword) {
-            if (!kioskPasswordFromDB) {
-                await loadKioskPassword();
-            }
-            return inputPassword === kioskPasswordFromDB;
-        }
-
+        // Toast Notification Functions (Global - used throughout the app)
         let toastTimeout;
 
         function showToast(title, message, type = 'info', duration = 5000) {
@@ -6389,116 +6396,13 @@ Sambil menunggu bantuan, terus pantau kondisi korban dan jaga tetap hangat.`
             }
         }
 
-        function disableAdminMenuItems() {
-            const adminPanelItem = document.getElementById('adminPanelItem');
-            const emergencyDashboardItem = document.getElementById('emergencyDashboardItem');
-
-            if (adminPanelItem) {
-                adminPanelItem.classList.add('disabled');
-                adminPanelItem.style.cursor = 'not-allowed';
-            }
-
-            if (emergencyDashboardItem) {
-                emergencyDashboardItem.classList.add('disabled');
-                emergencyDashboardItem.style.cursor = 'not-allowed';
-            }
-        }
-
-        function enableAdminMenuItems() {
-            const adminPanelItem = document.getElementById('adminPanelItem');
-            const emergencyDashboardItem = document.getElementById('emergencyDashboardItem');
-
-            if (adminPanelItem) {
-                adminPanelItem.classList.remove('disabled');
-                adminPanelItem.style.cursor = 'pointer';
-            }
-
-            if (emergencyDashboardItem) {
-                emergencyDashboardItem.classList.remove('disabled');
-                emergencyDashboardItem.style.cursor = 'pointer';
-            }
-        }
-
+        // Navigation functions for menu items
         function navigateToAdminPanel() {
-            const adminPanelItem = document.getElementById('adminPanelItem');
-            if (adminPanelItem && !adminPanelItem.classList.contains('disabled')) {
-                window.location.href = 'login-admin.html';
-            }
+            window.location.href = 'login-admin.html';
         }
 
         function navigateToEmergencyDashboard() {
-            const emergencyDashboardItem = document.getElementById('emergencyDashboardItem');
-            if (emergencyDashboardItem && !emergencyDashboardItem.classList.contains('disabled')) {
-                window.location.href = 'login-emergency.html';
-            }
-        }
-
-        function enterKioskModeWithPassword() {
-            isKioskModeActive = true;
-
-            localStorage.setItem('kiosk_mode_active', 'true');
-
-            enterFullscreen();
-
-            setTimeout(() => {
-                const message = ` Kiosk Mode aktif!\n\n` +
-                    ` Layar penuh diaktifkan.\n\n` +
-                    ` Tips untuk full screen sempurna:\n` +
-                    `• Tekan F11 sebelum masuk kiosk mode untuk hide browser UI\n` +
-                    `• Atau gunakan Chrome Kiosk Mode: chrome.exe --kiosk\n` +
-                    `• Taskbar Windows dapat di-hide via Settings`;
-                showToast(' Kiosk Mode Aktif', message, 'success', 8000);
-            }, 500);
-        }
-
-        function exitKioskModeWithPassword() {
-            isKioskModeActive = false;
-
-            localStorage.removeItem('kiosk_mode_active');
-
-            exitFullscreen();
-            showToast(' Kiosk Mode Dinonaktifkan', ' Kiosk Mode dinonaktifkan. Anda sekarang dapat mengakses kontrol browser.', 'info', 5000);
-        }
-
-        function showPasswordModal(title, description) {
-            const modal = document.getElementById('kioskPasswordModal');
-            const input = document.getElementById('kioskPasswordInput');
-            const error = document.getElementById('kioskPasswordError');
-            const modalTitle = document.querySelector('.kiosk-password-title');
-            const modalDesc = document.querySelector('.kiosk-password-description');
-            const submitBtn = document.getElementById('kioskSubmitBtn');
-
-            if (modalTitle) modalTitle.textContent = title;
-            if (modalDesc) modalDesc.textContent = description;
-
-            if (kioskActionType === 'enter') {
-                submitBtn.innerHTML = '<i class="fas fa-check"></i> Aktifkan';
-            } else {
-                submitBtn.innerHTML = '<i class="fas fa-check"></i> Keluar';
-            }
-
-            modal.classList.add('active');
-            error.classList.remove('show');
-            input.value = '';
-
-            const settingsSidebar = document.getElementById('settingsSidebar');
-            if (settingsSidebar) {
-                settingsSidebar.classList.remove('active');
-            }
-
-            setTimeout(() => {
-                input.focus();
-            }, 300);
-        }
-
-        function hidePasswordModal() {
-            const modal = document.getElementById('kioskPasswordModal');
-            const input = document.getElementById('kioskPasswordInput');
-            const error = document.getElementById('kioskPasswordError');
-
-            modal.classList.remove('active');
-            error.classList.remove('show');
-            input.value = '';
+            window.location.href = 'login-emergency.html';
         }
     </script>
 
@@ -6589,30 +6493,30 @@ Sambil menunggu bantuan, terus pantau kondisi korban dan jaga tetap hangat.`
 
         function loadServiceContent(container) {
             container.innerHTML = `
-                <div class="service-chat-wrapper" style="display: flex; flex-direction: column; height: 100%; width: 100%;">
-                    <div class="service-chat-header-controls">
+                <div class="service-chat-wrapper" style="display: flex; flex-direction: column; height: 100%; width: 100%; position: relative; overflow: hidden;">
+                    <div class="service-chat-header-controls" style="flex-shrink: 0; padding: 12px 16px; background: rgba(59, 130, 246, 0.05); border-bottom: 1px solid #e5e7eb;">
                         <div class="service-online-status">
                             <div class="service-status-dot" id="serviceStatusDot"></div>
                             <span id="serviceOnlineCount">0 online</span>
                         </div>
                     </div>
-                    <div class="service-chat-messages" id="serviceChatMessages" style="flex: 1; overflow-y: auto;"></div>
-                    <div class="service-typing-indicator" id="serviceTypingIndicator" style="display: none;">
+                    <div class="service-chat-messages" id="serviceChatMessages" style="flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; padding-bottom: 120px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;"></div>
+                    <div class="service-typing-indicator" id="serviceTypingIndicator" style="display: none; position: absolute; bottom: 100px; left: 16px; background: rgba(255,255,255,0.95); padding: 8px 16px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <span id="serviceTypingUser"></span>
-                        <div class="service-typing-dots">
+                        <div class="service-typing-dots" style="display: inline-flex; gap: 4px; margin-left: 8px;">
                             <div class="service-typing-dot"></div>
                             <div class="service-typing-dot"></div>
                             <div class="service-typing-dot"></div>
                         </div>
                     </div>
-                    <div class="service-chat-input-container" style="display: block !important; position: fixed; bottom: 0; left: 0; right: 0; z-index: 99999; padding: 16px 20px; background: white; border-top: 2px solid #e5e7eb; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1); min-height: 80px;">
-                        <div class="service-shortcut-hint">
+                    <div class="service-chat-input-container" style="position: absolute; bottom: 0; left: 0; right: 0; z-index: 100; padding: 16px 20px; background: white; border-top: 2px solid #e5e7eb; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);">
+                        <div class="service-shortcut-hint" style="position: absolute; top: -40px; left: 16px; background: rgba(59, 130, 246, 0.95); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12px; opacity: 0; animation: fadeInHint 0.5s ease 0.8s forwards;">
                             <i class="fas fa-info-circle"></i>
-                            <span>Klik <span class="shortcut-key">8</span> untuk kembali</span>
+                            <span>Klik <span class="shortcut-key" style="background: rgba(255,255,255,0.25); padding: 2px 6px; border-radius: 4px; font-weight: 600;">8</span> untuk kembali</span>
                         </div>
-                        <form class="service-chat-input-form" id="serviceChatForm" onsubmit="return false;" style="display: flex !important; gap: 12px; align-items: flex-end;">
-                            <textarea class="service-chat-input" id="serviceMessageInput" placeholder="Ketik pesan..." rows="1" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="true" inputmode="text" enterkeyhint="send" style="display: block !important; flex: 1; padding: 12px 16px; border: 2px solid #d1d5db; border-radius: 20px; font-size: 16px; resize: none; min-height: 48px; max-height: 120px; -webkit-appearance: none; touch-action: manipulation;"></textarea>
-                            <button type="button" class="service-chat-btn service-btn-send" id="serviceSendButton" style="display: flex !important; align-items: center; justify-content: center; min-width: 48px; height: 48px; background: #3b82f6; color: white; border: none; border-radius: 50%; cursor: pointer; flex-shrink: 0;">
+                        <form class="service-chat-input-form" id="serviceChatForm" onsubmit="return false;" style="display: flex; gap: 12px; align-items: flex-end;">
+                            <textarea class="service-chat-input" id="serviceMessageInput" placeholder="Ketik pesan..." rows="1" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="true" inputmode="text" enterkeyhint="send" style="flex: 1; padding: 12px 16px; border: 2px solid #d1d5db; border-radius: 20px; font-size: 16px; resize: none; min-height: 48px; max-height: 120px; -webkit-appearance: none; touch-action: manipulation; font-family: inherit;"></textarea>
+                            <button type="button" class="service-chat-btn service-btn-send" id="serviceSendButton" style="display: flex; align-items: center; justify-content: center; min-width: 48px; height: 48px; background: #3b82f6; color: white; border: none; border-radius: 50%; cursor: pointer; flex-shrink: 0; transition: all 0.2s;">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </form>
@@ -6898,6 +6802,10 @@ Sambil menunggu bantuan, terus pantau kondisi korban dan jaga tetap hangat.`
         }
 
         generateAiVoicePopupBubbles();
+    </script>
+
+    <!-- Super Kiosk Mode -->
+    <script src="kiosk-mode.js"></script
     </script>
 </body>
 
