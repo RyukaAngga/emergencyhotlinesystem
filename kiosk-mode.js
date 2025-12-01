@@ -821,6 +821,149 @@ function updateKioskControlButton() {
 }
 
 // ========================================
+// AGGRESSIVE FULLSCREEN RESTORE
+// ========================================
+let fullscreenRestoreAttempts = 0;
+const MAX_FULLSCREEN_ATTEMPTS = 10;
+
+function aggressiveFullscreenRestore() {
+    if (!isKioskModeActive) return;
+    if (isFullscreenActive()) return;
+    if (fullscreenRestoreAttempts >= MAX_FULLSCREEN_ATTEMPTS) return;
+    
+    fullscreenRestoreAttempts++;
+    console.log(`🔄 Attempting fullscreen restore (${fullscreenRestoreAttempts}/${MAX_FULLSCREEN_ATTEMPTS})...`);
+    
+    goFullscreen();
+    
+    // Check again after delay
+    setTimeout(() => {
+        if (isKioskModeActive && !isFullscreenActive()) {
+            aggressiveFullscreenRestore();
+        }
+    }, 1000);
+}
+
+// Auto-fullscreen on ANY user interaction when kiosk mode is active
+function setupAggressiveAutoFullscreen() {
+    const triggerFullscreen = (e) => {
+        if (isKioskModeActive && !isFullscreenActive()) {
+            console.log('👆 User interaction detected, restoring fullscreen...');
+            fullscreenRestoreAttempts = 0; // Reset counter
+            goFullscreen();
+        }
+    };
+    
+    // Listen to ALL possible user interactions
+    ['click', 'touchstart', 'touchend', 'mousedown', 'keydown', 'keypress'].forEach(event => {
+        document.addEventListener(event, triggerFullscreen, { passive: true, capture: true });
+    });
+}
+
+// Show overlay prompt to restore fullscreen
+function showFullscreenRestorePrompt() {
+    if (document.getElementById('fullscreen-restore-prompt')) return;
+    
+    const prompt = document.createElement('div');
+    prompt.id = 'fullscreen-restore-prompt';
+    prompt.innerHTML = `
+        <style>
+            #fullscreen-restore-prompt {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 999999;
+                color: white;
+                text-align: center;
+                cursor: pointer;
+                animation: fadeIn 0.3s ease;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            .restore-icon {
+                font-size: 80px;
+                margin-bottom: 20px;
+                animation: pulse 1.5s infinite;
+            }
+            
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.1); opacity: 0.8; }
+            }
+            
+            .restore-title {
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 12px;
+            }
+            
+            .restore-subtitle {
+                font-size: 18px;
+                opacity: 0.9;
+                margin-bottom: 30px;
+            }
+            
+            .restore-button {
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
+                color: white;
+                border: none;
+                padding: 16px 40px;
+                border-radius: 30px;
+                font-size: 18px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                transition: all 0.3s;
+            }
+            
+            .restore-button:hover {
+                transform: scale(1.05);
+                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+            }
+        </style>
+        <div class="restore-icon">🔒</div>
+        <div class="restore-title">Kiosk Mode Aktif</div>
+        <div class="restore-subtitle">Klik di mana saja untuk kembali ke mode layar penuh</div>
+        <button class="restore-button">
+            <i class="fas fa-expand"></i> Masuk Fullscreen
+        </button>
+    `;
+    
+    const restoreFullscreen = () => {
+        goFullscreen();
+        setTimeout(() => {
+            if (isFullscreenActive()) {
+                prompt.remove();
+            }
+        }, 500);
+    };
+    
+    prompt.addEventListener('click', restoreFullscreen);
+    document.body.appendChild(prompt);
+    
+    // Auto-remove when fullscreen is active
+    const checkFullscreen = setInterval(() => {
+        if (isFullscreenActive()) {
+            prompt.remove();
+            clearInterval(checkFullscreen);
+        }
+    }, 500);
+}
+
+// ========================================
 // INITIALIZATION
 // ========================================
 function initSuperKioskMode() {
@@ -829,9 +972,10 @@ function initSuperKioskMode() {
     // Setup event listeners
     setupKioskEventListeners();
     setupAutoFullscreen();
+    setupAggressiveAutoFullscreen(); // NEW: More aggressive auto-fullscreen
     setupStorageSync();
     
-    // Check if kiosk mode was active
+    // Check if kiosk mode was active (from previous page/session)
     const kioskModeStatus = localStorage.getItem('kiosk_mode_active');
     
     if (kioskModeStatus === 'true') {
@@ -840,13 +984,34 @@ function initSuperKioskMode() {
         startFullscreenWatchdog();
         
         console.log('🔒 Super Kiosk Mode restored from previous session');
+        console.log('📍 Current page:', window.location.pathname);
         
-        // Try fullscreen after short delay
+        // Try fullscreen immediately
+        goFullscreen();
+        
+        // Try again after short delay
         setTimeout(() => {
             if (!isFullscreenActive()) {
+                console.log('⚠️ Fullscreen not active, trying again...');
                 goFullscreen();
             }
-        }, 500);
+        }, 300);
+        
+        // Try again after longer delay
+        setTimeout(() => {
+            if (!isFullscreenActive()) {
+                console.log('⚠️ Fullscreen still not active, starting aggressive restore...');
+                aggressiveFullscreenRestore();
+            }
+        }, 1000);
+        
+        // Show prompt if still not fullscreen after 2 seconds
+        setTimeout(() => {
+            if (isKioskModeActive && !isFullscreenActive()) {
+                console.log('⚠️ Showing fullscreen restore prompt...');
+                showFullscreenRestorePrompt();
+            }
+        }, 2000);
     }
     
     // Create control button on dashboard
